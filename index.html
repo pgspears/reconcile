@@ -204,10 +204,16 @@
         
         .button.secondary {
             background: var(--text-secondary);
+            color: white;
         }
         
         .button.secondary:hover:not(:disabled) {
             background: var(--text-primary);
+        }
+        
+        .button.secondary:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
         }
         
         .status {
@@ -571,13 +577,16 @@
         </div>
         
         <div class="step">
-            <h2>Step 3: Configure Export</h2>
+            <h2>Step 3: Process and Export Data</h2>
             <div class="form-group">
-                <label for="qb-output-name">Output File Name</label>
+                <label for="qb-output-name">Output File Name (for export)</label>
                 <input type="text" id="qb-output-name" placeholder="e.g., QuickBooks_Report.xlsx">
             </div>
-            <button id="qb-convert-btn" class="button full-width" disabled>
-                <span>Convert QuickBooks Data</span>
+            <button id="qb-load-btn" class="button full-width" disabled>
+                <span>Load QuickBooks Data</span>
+            </button>
+            <button id="qb-export-btn" class="button secondary full-width" disabled style="margin-top: 0.5rem;">
+                <span>Export Formatted File</span>
             </button>
             <div id="qb-status" class="status"></div>
         </div>
@@ -657,9 +666,12 @@
         </div>
         
         <div class="step">
-            <h2>Step 4: Export Payroll Data</h2>
-            <button id="payroll-export-btn" class="button full-width" disabled>
-                <span>Export Payroll Data</span>
+            <h2>Step 4: Process and Export Payroll Data</h2>
+            <button id="payroll-load-btn" class="button full-width" disabled>
+                <span>Load & Aggregate Data</span>
+            </button>
+            <button id="payroll-export-btn" class="button secondary full-width" disabled style="margin-top: 0.5rem;">
+                <span>Export Aggregated File</span>
             </button>
             <div id="payroll-status" class="status"></div>
         </div>
@@ -691,11 +703,11 @@
                 <div class="checkbox-group" style="margin: 1rem 0;">
                     <div class="checkbox-item">
                         <input type="checkbox" id="recon-has-qb" disabled>
-                        <label for="recon-has-qb">QuickBooks data processed</label>
+                        <label for="recon-has-qb">QuickBooks data loaded</label>
                     </div>
                     <div class="checkbox-item">
                         <input type="checkbox" id="recon-has-payroll" disabled>
-                        <label for="recon-has-payroll">Payroll data processed</label>
+                        <label for="recon-has-payroll">Payroll data loaded</label>
                     </div>
                 </div>
             </div>
@@ -1547,7 +1559,7 @@ async function processQuickBooksData(jsonData) {
     return dataRows;
 }
 
-function generateQuickBooksExcel(dataRows, outputName) {
+function createQuickBooksWorkbook(dataRows) {
     const includeTotals = document.getElementById('qb-include-totals').checked;
     const selectedColumns = Array.from(document.querySelectorAll('#qb-columns input:checked'))
         .map(el => el.dataset.column);
@@ -1664,15 +1676,15 @@ function generateQuickBooksExcel(dataRows, outputName) {
         formattedSheet: ws,
         pivotSheet: pivotWs,
         rawData: dataRows,
-        pivotData: pivotData
+        pivotData: pivotData,
+        workbook: wb // Store the workbook for on-demand export
     };
     
     // Show data preview
     document.getElementById('qb-data-preview').style.display = 'block';
     displayQuickBooksData();
     
-    XLSX.writeFile(wb, outputName);
-    return true;
+    return wb;
 }
 
 function createQuickBooksPivot(dataRows, selectedColumns, returnWorksheet = false) {
@@ -2131,6 +2143,10 @@ async function createPayrollWorkbook(aggregateAOA, filename, saveForCombined = f
     wsSum['!cols'] = [{ wch: 40 }, { wch: 20 }];
     wsSum['!rows'] = rowLevels.map(level => ({ level }));
     wsSum['!outline'] = { above: true };
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, wsAgg, 'Payroll Data');
+    XLSX.utils.book_append_sheet(wb, wsSum, 'Summary');
 
     if (saveForCombined) {
         // Calculate total Provider Payment for Combined Summary
@@ -2156,13 +2172,10 @@ async function createPayrollWorkbook(aggregateAOA, filename, saveForCombined = f
             aggregateAOA: aggregateAOA,
             summaryData: summaryData,
             totalPayment: totalPayment,
-            uniqueRecordCount: uniqueCount
+            uniqueRecordCount: uniqueCount,
+            workbook: wb // Store workbook for on-demand export
         };
     }
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, wsAgg, 'Payroll Data');
-    XLSX.utils.book_append_sheet(wb, wsSum, 'Summary');
     
     // Show data preview
     document.getElementById('payroll-data-preview').style.display = 'block';
@@ -2780,10 +2793,15 @@ function checkDataAvailability() {
     
     document.getElementById('recon-has-qb').checked = !!hasQB;
     document.getElementById('recon-has-payroll').checked = !!hasPayroll;
-    document.getElementById('recon-analyze-btn').disabled = !(hasQB && hasPayroll);
     
-    if (hasQB && hasPayroll) {
+    const canAnalyze = hasQB && hasPayroll;
+    document.getElementById('recon-analyze-btn').disabled = !canAnalyze;
+    
+    if (canAnalyze) {
         setStatus('recon-status', 'Both data sources available. Ready to analyze.', 'info');
+    } else {
+        setStatus('recon-status', 'Load both QuickBooks and Payroll data to enable analysis.', 'warning');
+        document.getElementById('recon-preview').style.display = 'none'; // Hide old results
     }
 }
 
@@ -2840,17 +2858,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const fileName = e.target.files[0].name;
             const baseName = fileName.substring(0, fileName.lastIndexOf('.'));
             document.getElementById('qb-output-name').value = `${baseName}_formatted.xlsx`;
-            document.getElementById('qb-convert-btn').disabled = false;
+            document.getElementById('qb-load-btn').disabled = false;
+            document.getElementById('qb-export-btn').disabled = true; // Disable on new file
             state.quickbooks.inputFile = e.target.files[0];
         }
     });
     
-    document.getElementById('qb-convert-btn').addEventListener('click', async () => {
-        const outputName = document.getElementById('qb-output-name').value.trim();
+    document.getElementById('qb-load-btn').addEventListener('click', async () => {
         const sheetName = document.getElementById('qb-sheet-name').value.trim();
         
-        if (!state.quickbooks.inputFile || !outputName || !sheetName) {
-            setStatus('qb-status', 'Please provide all required information', 'error');
+        if (!state.quickbooks.inputFile || !sheetName) {
+            setStatus('qb-status', 'Please provide an input file and sheet name', 'error');
             return;
         }
         
@@ -2859,10 +2877,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        const btn = document.getElementById('qb-load-btn');
+        const exportBtn = document.getElementById('qb-export-btn');
+        
         try {
             setStatus('qb-status', 'Processing QuickBooks data...', 'info');
-            const btn = document.getElementById('qb-convert-btn');
             btn.disabled = true;
+            exportBtn.disabled = true;
             
             const data = await state.quickbooks.inputFile.arrayBuffer();
             const workbook = XLSX.read(data);
@@ -2875,19 +2896,39 @@ document.addEventListener('DOMContentLoaded', () => {
             const jsonData = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
             
             const processedData = await processQuickBooksData(jsonData);
-            generateQuickBooksExcel(processedData, outputName);
+            createQuickBooksWorkbook(processedData);
             
-            setStatus('qb-status', 'QuickBooks conversion completed successfully!', 'success');
-            log(`QuickBooks conversion completed: ${processedData.length} records processed`);
+            setStatus('qb-status', 'QuickBooks data loaded successfully!', 'success');
+            exportBtn.disabled = false; // Enable export
+            log(`QuickBooks data loaded: ${processedData.length} records processed`);
             
-            // Check if reconciliation is available
             checkDataAvailability();
             
         } catch (err) {
             setStatus('qb-status', `Error: ${err.message}`, 'error');
             log(`QuickBooks error: ${err.message}`);
         } finally {
-            document.getElementById('qb-convert-btn').disabled = false;
+            btn.disabled = false;
+        }
+    });
+    
+    document.getElementById('qb-export-btn').addEventListener('click', () => {
+        const outputName = document.getElementById('qb-output-name').value.trim();
+        if (!outputName) {
+            setStatus('qb-status', 'Please provide an output file name.', 'warning');
+            return;
+        }
+        if (!state.quickbooks.processedData || !state.quickbooks.processedData.workbook) {
+            setStatus('qb-status', 'No QuickBooks data has been loaded to export.', 'error');
+            return;
+        }
+        try {
+            setStatus('qb-status', 'Exporting file...', 'info');
+            XLSX.writeFile(state.quickbooks.processedData.workbook, outputName);
+            setStatus('qb-status', 'File exported successfully!', 'success');
+        } catch (err) {
+            setStatus('qb-status', `Export failed: ${err.message}`, 'error');
+            log(`QuickBooks export error: ${err.message}`);
         }
     });
 
@@ -2902,6 +2943,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         setStatus('payroll-status', 'Reading primary file...', 'info');
         state.payroll.primaryFile = file;
+        document.getElementById('payroll-export-btn').disabled = true; // Disable on new file
         
         try {
             const buffer = await file.arrayBuffer();
@@ -2936,8 +2978,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }];
             updatePayrollFileList();
             document.getElementById('payroll-add-files').disabled = false;
-            document.getElementById('payroll-export-btn').disabled = false;
-            setStatus('payroll-status', 'Table selected. You can now add more files or export.', 'info');
+            document.getElementById('payroll-load-btn').disabled = false;
+            document.getElementById('payroll-export-btn').disabled = true;
+            setStatus('payroll-status', 'Table selected. You can now add more files or load.', 'info');
         }
     });
     
@@ -2951,15 +2994,17 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePayrollFileList();
     });
     
-    document.getElementById('payroll-export-btn').addEventListener('click', async () => {
+    document.getElementById('payroll-load-btn').addEventListener('click', async () => {
         if (state.payroll.fileStore.length === 0 || !state.payroll.selectedTable) {
             alert('Please select a table and at least one file.');
             return;
         }
         
         setStatus('payroll-status', 'Starting aggregation...', 'info');
-        const btn = document.getElementById('payroll-export-btn');
+        const btn = document.getElementById('payroll-load-btn');
+        const exportBtn = document.getElementById('payroll-export-btn');
         btn.disabled = true;
+        exportBtn.disabled = true;
         
         try {
             let masterColumns = null;
@@ -3050,13 +3095,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const header = [...masterColumns, 'SourceFile'];
             const aoa = [header, ...allRows];
             
-            const timestamp = new Date().toISOString().slice(0, 19).replace(/[-T:]/g, '');
-            const outName = `${state.payroll.selectedTable}_Payroll_${timestamp}.xlsx`;
+            await createPayrollWorkbook(aoa, null, true); // Pass null to only load data
             
-            await createPayrollWorkbook(aoa, outName, true);
-            
-            setStatus('payroll-status', 'Export complete!', 'success');
-            
+            setStatus('payroll-status', 'Payroll data loaded successfully!', 'success');
+            exportBtn.disabled = false; // Enable export
             checkDataAvailability();
             
             let summary = `Processed ${state.payroll.fileStore.length} file(s):\n\n`;
@@ -3077,10 +3119,27 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Payroll Aggregation Summary\n\n' + summary);
             
         } catch (err) {
-            setStatus('payroll-status', `Export failed: ${err.message}`, 'error');
-            log(`Payroll export error: ${err.message}`);
+            setStatus('payroll-status', `Load failed: ${err.message}`, 'error');
+            log(`Payroll load error: ${err.message}`);
         } finally {
             btn.disabled = false;
+        }
+    });
+
+    document.getElementById('payroll-export-btn').addEventListener('click', () => {
+        if (!state.payroll.processedData || !state.payroll.processedData.workbook) {
+            setStatus('payroll-status', 'No payroll data has been loaded to export.', 'error');
+            return;
+        }
+        try {
+            setStatus('payroll-status', 'Exporting file...', 'info');
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/[-T:]/g, '');
+            const outName = `${state.payroll.selectedTable}_Payroll_${timestamp}.xlsx`;
+            XLSX.writeFile(state.payroll.processedData.workbook, outName);
+            setStatus('payroll-status', 'File exported successfully!', 'success');
+        } catch (err) {
+            setStatus('payroll-status', `Export failed: ${err.message}`, 'error');
+            log(`Payroll export error: ${err.message}`);
         }
     });
 
