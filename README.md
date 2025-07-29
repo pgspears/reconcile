@@ -125,10 +125,4 @@ A professional, browser‑based tool for converting QuickBooks exports, aggregat
 
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
----
 
-## 📞 Contact
-
-**Accelerate Solutions, LLC**  
-Website: https://acceleratesolutions.io  
-Email: support@acceleratesolutions.io  
