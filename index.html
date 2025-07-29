@@ -1,0 +1,3176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconciler Pro</title>
+    
+    <!-- SheetJS with styling support -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    
+    <style>
+        :root {
+            --primary: #007bff;
+            --primary-hover: #0056b3;
+            --success: #28a745;
+            --error: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --border: #dce1e6;
+            --bg-light: #f4f7f9;
+            --bg-lighter: #f8f9fa;
+            --text-primary: #1a2533;
+            --text-secondary: #667085;
+            --header-bg: #e9ecef;
+            --discrepancy-bg: #ffe0e0;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background: var(--bg-light);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        h1 {
+            text-align: center;
+            margin: 0 0 1rem;
+            font-size: 2rem;
+            color: var(--text-primary);
+        }
+        
+        .subtitle {
+            text-align: center;
+            margin: 0 0 2rem;
+            color: var(--text-secondary);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            color: var(--primary);
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .step {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        
+        .step h2 {
+            margin: 0 0 1rem;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        
+        .form-group input[type="text"],
+        .form-group input[type="file"],
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        input[type="file"] {
+            padding: 0.5rem !important;
+        }
+        
+        .hint {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+        
+        .hint ol {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+        }
+        
+        .hint ol li {
+            margin: 0.25rem 0;
+        }
+        
+        .hint a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .hint a:hover {
+            text-decoration: underline;
+        }
+        
+        .button {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .button:hover:not(:disabled) {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+        }
+        
+        .button:disabled {
+            background: #a0c7ff;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .button.full-width {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .button.secondary {
+            background: var(--text-secondary);
+        }
+        
+        .button.secondary:hover:not(:disabled) {
+            background: var(--text-primary);
+        }
+        
+        .status {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .status.show {
+            display: block;
+        }
+        
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #90caf9;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #81c784;
+        }
+        
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        
+        .status.warning {
+            background: #fff8e1;
+            color: #f57c00;
+            border: 1px solid #ffcc80;
+        }
+        
+        details {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            background: white;
+        }
+        
+        summary {
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            user-select: none;
+        }
+        
+        .settings-grid {
+            margin-top: 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .checkbox-item label {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .slider-group output {
+            font-weight: 600;
+            background: var(--header-bg);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            min-width: 3em;
+            text-align: center;
+        }
+        
+        input[type="range"] {
+            flex-grow: 1;
+        }
+        
+        .file-list {
+            min-height: 80px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1rem;
+            background: var(--bg-lighter);
+        }
+        
+        .file-list-item {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .file-list-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .remove-file {
+            background: var(--error);
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        
+        .remove-file:hover {
+            background: #dc3545;
+        }
+        
+        .log {
+            margin-top: 1rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            background: #f3f6fb;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            max-height: 250px;
+            overflow: auto;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        /* Table display styles */
+        .data-table-container {
+            max-height: 500px;
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        
+        .data-table th {
+            background: var(--header-bg);
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .data-table td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .data-table tr:hover {
+            background: var(--bg-lighter);
+        }
+        
+        .data-table tr.discrepancy {
+            background: var(--discrepancy-bg);
+        }
+        
+        .data-table tr.discrepancy:hover {
+            background: #ffd0d0;
+        }
+        
+        /* Help section styles */
+        .help-section {
+            background: var(--bg-lighter);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .help-section h3 {
+            color: var(--primary);
+            margin: 0 0 1rem;
+        }
+        
+        .help-section h4 {
+            color: var(--text-primary);
+            margin: 1.5rem 0 0.5rem;
+        }
+        
+        .help-section ol, .help-section ul {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+        }
+        
+        .help-section li {
+            margin: 0.5rem 0;
+        }
+        
+        .help-section .example {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Toggle button styles */
+        .toggle-container {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .toggle-button {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .toggle-button.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .toggle-button:hover:not(.active) {
+            background: var(--bg-lighter);
+        }
+
+        .data-table tr.summary-group-header {
+            background-color: #366092;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .data-table tr.summary-group-header:hover {
+            background-color: #274468;
+        }
+        
+        .data-table tr.summary-group-header td {
+            color: white;
+        }
+
+        .data-table tr.summary-detail-row td:first-child {
+            padding-left: 2rem;
+        }
+
+        .summary-search-container {
+            padding: 0 0 1rem;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Reconciler Pro</h1>
+    <p class="subtitle">Professional QuickBooks file conversion, Excel table aggregation, and cross-platform data comparison</p>
+    
+    <!-- Shared Contractor Mapping Section -->
+    <div class="step" style="background: #f0f7ff; border-color: var(--primary);">
+        <h2 style="color: var(--primary);">Contractor Mapping (Shared Across All Tabs)</h2>
+        <div class="form-group">
+            <label for="shared-contractor-csv">Upload Contractor Banking Info CSV</label>
+            <input type="file" id="shared-contractor-csv" accept=".csv">
+            <div class="hint" style="margin-top: 1rem;">
+                <strong>To download the Contractor Banking info:</strong>
+                <ol>
+                    <li>Go to <a href="https://docs.google.com/spreadsheets/d/1eQ_UFG674W8ulQYVLezAOK2UAR_7K1aahL-LXot-4EM/edit?gid=0#gid=0" target="_blank">this Google Sheets document</a></li>
+                    <li>Click <strong>File → Download → Comma Separated Values (.csv)</strong></li>
+                    <li>Upload the downloaded CSV file here</li>
+                </ol>
+                <p style="margin-top: 0.5rem;">This file should contain columns: <strong>Contractor Name</strong> and <strong>Business Name</strong></p>
+                <p style="margin-top: 0.5rem; font-style: italic;">Note: This mapping will be used across all tabs (QuickBooks, Payroll, and Reconciliation)</p>
+            </div>
+            <div id="shared-contractor-status" class="status" style="margin-top: 1rem;"></div>
+        </div>
+    </div>
+    
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('quickbooks')">QuickBooks Converter</button>
+        <button class="tab" onclick="showTab('payroll')">Payroll Data</button>
+        <button class="tab" onclick="showTab('reconciliation')">Reconciliation</button>
+        <button class="tab" onclick="showTab('combined')">Combined Export</button>
+        <button class="tab" onclick="showTab('help')">Help</button>
+    </div>
+    
+    <!-- QuickBooks Tab -->
+    <div id="quickbooks-tab" class="tab-content active">
+        <div class="step">
+            <h2>Step 1: Contractor Mapping Status</h2>
+            <div id="qb-mapping-status" class="status info show">
+                <span id="qb-mapping-text">No contractor mapping loaded. Please upload the CSV file above.</span>
+            </div>
+        </div>
+        
+        <div class="step">
+            <h2>Step 2: Upload QuickBooks Export File</h2>
+            <div class="form-group">
+                <input type="file" id="qb-input-file" accept=".xlsx,.xlsm">
+            </div>
+        </div>
+        
+        <div class="step">
+            <h2>Step 3: Configure Export</h2>
+            <div class="form-group">
+                <label for="qb-output-name">Output File Name</label>
+                <input type="text" id="qb-output-name" placeholder="e.g., QuickBooks_Report.xlsx">
+            </div>
+            <button id="qb-convert-btn" class="button full-width" disabled>
+                <span>Convert QuickBooks Data</span>
+            </button>
+            <div id="qb-status" class="status"></div>
+        </div>
+        
+        <div class="step" id="qb-data-preview" style="display: none;">
+            <h2>Data Preview</h2>
+            <div class="toggle-container">
+                <button class="toggle-button active" onclick="toggleQBView('formatted')">Formatted Data</button>
+                <button class="toggle-button" onclick="toggleQBView('pivot')">Pivot Summary</button>
+            </div>
+            <div class="summary-search-container" id="qb-summary-search-container" style="display: none;">
+                <div class="form-group">
+                    <label for="qb-summary-search">Search Business Name:</label>
+                    <input type="text" id="qb-summary-search" placeholder="Filter summary results...">
+                </div>
+            </div>
+            <div id="qb-table-container"></div>
+        </div>
+        
+        <details>
+            <summary>Advanced Settings</summary>
+            <div class="settings-grid">
+                <div>
+                    <div class="form-group">
+                        <label for="qb-sheet-name">Input Sheet Name</label>
+                        <input type="text" id="qb-sheet-name" value="Sheet1">
+                    </div>
+                    <div class="form-group">
+                        <label>Fuzzy Match Threshold: <output id="qb-threshold-output">80</output>%</label>
+                        <div class="slider-group">
+                            <input type="range" id="qb-threshold" min="0" max="100" value="80" 
+                                   oninput="document.getElementById('qb-threshold-output').value = this.value">
+                        </div>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="qb-include-totals">
+                        <label for="qb-include-totals">Include 'Total' rows in output</label>
+                    </div>
+                </div>
+                <div>
+                    <label>Columns to Include:</label>
+                    <div id="qb-columns" class="checkbox-group"></div>
+                </div>
+            </div>
+        </details>
+    </div>
+    
+    <!-- Payroll Tab -->
+    <div id="payroll-tab" class="tab-content">
+        <div class="step">
+            <h2>Step 1: Select Primary File and Table</h2>
+            <div class="form-group">
+                <input type="file" id="payroll-primary-file" accept=".xlsx,.xlsm">
+            </div>
+            <div class="form-group">
+                <select id="payroll-table-select" disabled>
+                    <option>-- Select a Table --</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="step">
+            <h2>Step 2: Add Files with the Same Table</h2>
+            <div class="form-group">
+                <input type="file" id="payroll-add-files" accept=".xlsx,.xlsm" multiple disabled>
+            </div>
+            <div class="file-list" id="payroll-file-list">
+                <p style="color: var(--text-secondary); text-align: center;">No files added yet</p>
+            </div>
+        </div>
+        
+        <div class="step">
+            <h2>Step 3: Contractor Mapping Status</h2>
+            <div id="payroll-mapping-status" class="status info show">
+                <span id="payroll-mapping-text">No contractor mapping loaded. Please upload the CSV file above.</span>
+            </div>
+        </div>
+        
+        <div class="step">
+            <h2>Step 4: Export Payroll Data</h2>
+            <button id="payroll-export-btn" class="button full-width" disabled>
+                <span>Export Payroll Data</span>
+            </button>
+            <div id="payroll-status" class="status"></div>
+        </div>
+        
+        <div class="step" id="payroll-data-preview" style="display: none;">
+            <h2>Data Preview</h2>
+            <div class="toggle-container">
+                <button class="toggle-button active" onclick="togglePayrollView('aggregate')">Payroll Data</button>
+                <button class="toggle-button" onclick="togglePayrollView('summary')">Summary</button>
+            </div>
+            <div class="summary-search-container" id="payroll-summary-search-container" style="display: none;">
+                 <div class="form-group">
+                    <label for="payroll-summary-search">Search Row Labels:</label>
+                    <input type="text" id="payroll-summary-search" placeholder="Filter summary results...">
+                </div>
+            </div>
+            <div id="payroll-table-container"></div>
+        </div>
+    </div>
+    
+    <!-- Reconciliation Tab -->
+    <div id="reconciliation-tab" class="tab-content">
+        <div class="step">
+            <h2>Data Reconciliation</h2>
+            <p>Compare QuickBooks and Payroll data to identify discrepancies in business payments.</p>
+            
+            <div class="form-group">
+                <label>Required Data:</label>
+                <div class="checkbox-group" style="margin: 1rem 0;">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="recon-has-qb" disabled>
+                        <label for="recon-has-qb">QuickBooks data processed</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="recon-has-payroll" disabled>
+                        <label for="recon-has-payroll">Payroll data processed</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="recon-threshold">Match Threshold</label>
+                <div class="slider-group">
+                    <input type="range" id="recon-threshold" min="0" max="10" value="1" step="0.01"
+                           oninput="document.getElementById('recon-threshold-output').value = this.value">
+                    <output id="recon-threshold-output">1</output>
+                    <span>dollars</span>
+                </div>
+                <p class="hint">Differences smaller than this amount will be considered matches</p>
+            </div>
+            
+            <button id="recon-analyze-btn" class="button full-width" disabled>
+                <span>Analyze Discrepancies</span>
+            </button>
+            <div id="recon-status" class="status"></div>
+            
+            <div id="recon-preview" style="margin-top: 2rem; display: none;">
+                <h3>Discrepancy Preview</h3>
+                <div class="status info show" id="recon-summary"></div>
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Business Name</th>
+                                <th style="text-align: right;">QB Total</th>
+                                <th style="text-align: right;">Payroll Total</th>
+                                <th style="text-align: right;">Difference</th>
+                                <th>Explanation</th>
+                                <th>QB Payments<br><small>(Date: Amount)</small></th>
+                                <th>Payroll Payments<br><small>(Source: Amount)</small></th>
+                            </tr>
+                        </thead>
+                        <tbody id="recon-tbody">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 1.5rem;">
+                    <button id="recon-export-btn" class="button">
+                        <span>Export Reconciliation Report</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Combined Tab -->
+    <div id="combined-tab" class="tab-content">
+        <div class="step">
+            <h2>Combined Export Options</h2>
+            <p>Export all processed data from both tools into a single, beautifully formatted Excel file.</p>
+            
+            <div class="checkbox-group" style="margin: 1.5rem 0;">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="include-quickbooks" checked>
+                    <label for="include-quickbooks">Include QuickBooks sheets (Formatted & Pivot Summary)</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="include-payroll" checked>
+                    <label for="include-payroll">Include Payroll sheets (Data & Summary)</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="include-reconciliation" checked>
+                    <label for="include-reconciliation">Include Reconciliation sheet</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="include-combined-summary" checked>
+                    <label for="include-combined-summary">Include Combined Summary sheet</label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="combined-output-name">Combined Output File Name</label>
+                <input type="text" id="combined-output-name" placeholder="e.g., Combined_Report.xlsx">
+            </div>
+            
+            <button id="combined-export-btn" class="button full-width">
+                <span>Export Combined File</span>
+            </button>
+            <div id="combined-status" class="status"></div>
+        </div>
+    </div>
+    
+    <!-- Help Tab -->
+    <div id="help-tab" class="tab-content">
+        <div class="help-section">
+            <h3>Welcome to Reconciler Pro</h3>
+            <p>Reconciler Pro is a comprehensive tool for processing QuickBooks exports, payroll data, and reconciling payments across multiple sources.</p>
+            
+            <h4>Getting Started</h4>
+            <ol>
+                <li><strong>Upload Contractor Mapping:</strong> Start by uploading the contractor banking info CSV file. This mapping is shared across all features.</li>
+                <li><strong>Process QuickBooks Data:</strong> Convert QuickBooks exports into formatted reports with pivot summaries.</li>
+                <li><strong>Process Payroll Data:</strong> Aggregate payroll data from multiple Excel files containing named tables.</li>
+                <li><strong>Reconcile Data:</strong> Compare QuickBooks and Payroll totals to identify discrepancies.</li>
+                <li><strong>Export Combined Report:</strong> Generate a comprehensive Excel file with all processed data.</li>
+            </ol>
+            
+            <h4>QuickBooks Converter</h4>
+            <p>The QuickBooks converter processes exported data and:</p>
+            <ul>
+                <li>Maps business names to contractor names using fuzzy matching</li>
+                <li>Formats dates and currency values consistently</li>
+                <li>Creates pivot summaries by business and date</li>
+                <li>Applies professional formatting with alternating row colors</li>
+            </ul>
+            
+            <div class="example">
+                Expected columns: Type, Date, Number, Original Amount, Paid Amount, Balance
+            </div>
+            
+            <h4>Payroll Data Aggregation</h4>
+            <p>The payroll aggregator combines data from multiple Excel files:</p>
+            <ul>
+                <li>Select files containing the same named Excel table</li>
+                <li>Automatically merges data while preserving source file information</li>
+                <li>Maps provider names to business names</li>
+                <li>Creates summaries grouped by business and source file</li>
+            </ul>
+            
+            <div class="example">
+                Tip: All files must contain the same table structure for successful aggregation
+            </div>
+            
+            <h4>Data Reconciliation</h4>
+            <p>The reconciliation feature helps identify payment discrepancies:</p>
+            <ul>
+                <li><strong>Missing from QB:</strong> Businesses in Payroll but not in QuickBooks</li>
+                <li><strong>Missing from Payroll:</strong> Businesses in QuickBooks but not in Payroll</li>
+                <li><strong>Amount Differences:</strong> Same business with different payment totals</li>
+                <li>Set a threshold to ignore minor differences (e.g., rounding errors)</li>
+            </ul>
+            
+            <h4>Table Display Features</h4>
+            <p>All processed data can be viewed directly in the application:</p>
+            <ul>
+                <li>Toggle between different views (formatted data, summaries)</li>
+                <li>Discrepancies are highlighted in red for easy identification</li>
+                <li>Tables are scrollable with sticky headers</li>
+                <li>Hover over rows for better visibility</li>
+            </ul>
+            
+            <h4>Tips for Best Results</h4>
+            <ul>
+                <li>Ensure your contractor mapping CSV has exact column names: "Contractor Name" and "Business Name"</li>
+                <li>QuickBooks files should be exported in Excel format (.xlsx)</li>
+                <li>For payroll files, verify all tables have consistent naming</li>
+                <li>Use the fuzzy match threshold to handle minor name variations</li>
+                <li>Review discrepancies before exporting final reports</li>
+            </ul>
+            
+            <h4>Troubleshooting</h4>
+            <p><strong>Common Issues:</strong></p>
+            <ul>
+                <li><em>Missing columns error:</em> Ensure your QuickBooks export contains all required columns</li>
+                <li><em>Table not found:</em> Verify the Excel file contains named tables (not just ranges)</li>
+                <li><em>Mapping not working:</em> Check that business names in your data match those in the mapping file</li>
+                <li><em>Large differences in reconciliation:</em> Verify date ranges match between sources</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="log" id="global-log" style="display: none;"></div>
+    
+    <div class="footer">
+        <p>Reconciler Pro v3.0 | © 2025 Accelerate Solutions, LLC</p>
+    </div>
+</div>
+
+<!-- FuzzySet.js for fuzzy matching -->
+<script>
+var FuzzySet = (function() {
+    'use strict';
+    var defaultOptions = {
+        gramSizeLower: 2,
+        gramSizeUpper: 3,
+        useLevenshtein: true,
+        returnToLowerCase: true,
+        threshold: 1
+    };
+    var FuzzySet = function(source, options) {
+        var me = {};
+        options = options || {};
+        me.gramSizeLower = options.gramSizeLower || defaultOptions.gramSizeLower;
+        me.gramSizeUpper = options.gramSizeUpper || defaultOptions.gramSizeUpper;
+        me.useLevenshtein = (options.useLevenshtein === undefined) ? defaultOptions.useLevenshtein : options.useLevenshtein;
+        me.threshold = options.threshold || defaultOptions.threshold;
+        me.returnToLowerCase = (options.returnToLowerCase === undefined) ? defaultOptions.returnToLowerCase : options.returnToLowerCase;
+        me.exactSet = {};
+        me.matchDict = {};
+        me.items = {};
+        for (var i = me.gramSizeLower; i < me.gramSizeUpper + 1; ++i) {
+            me.items[i] = [];
+        }
+        var levenshtein = function(str1, str2) {
+            if (str1 === str2) return 1;
+            if (str1 === undefined || str1 === null || str2 === undefined || str2 === null) return 0;
+            if (str1.length > str2.length) { var tmp = str1; str1 = str2; str2 = tmp; }
+            var dist = [];
+            var i, j, res;
+            for (i = 0; i <= str2.length; i++) { dist[i] = i; }
+            for (j = 1; j <= str1.length; j++) {
+                var prev = dist[0];
+                dist[0] = j;
+                for (i = 1; i <= str2.length; i++) {
+                    var tmp = dist[i];
+                    var cost = (str1[j-1] === str2[i-1]) ? 0 : 1;
+                    dist[i] = Math.min(dist[i-1] + 1, prev + cost, dist[i] + 1);
+                    prev = tmp;
+                }
+            }
+            return 1.0 - dist[str2.length] / str2.length;
+        };
+        var _nonWord = /[^a-zA-Z0-9\u00C0-\u017F, ]+/g;
+        var _iterateGrams = function(value, gramSize) {
+            gramSize = gramSize || 2;
+            var simplified = '-' + value.toLowerCase().replace(_nonWord, '') + '-';
+            var lenDiff = gramSize - simplified.length;
+            var results = [];
+            if (lenDiff > 0) {
+                for (var i = 0; i < lenDiff; ++i) { simplified += '-'; }
+            }
+            for (var i = 0; i < simplified.length - gramSize + 1; ++i) {
+                results.push(simplified.slice(i, i + gramSize));
+            }
+            return results;
+        };
+        me.add = function(value) {
+            var lower = me.returnToLowerCase ? value.toLowerCase() : value;
+            if (me.exactSet[lower]) { return false; }
+            var i = me.gramSizeLower;
+            for (i; i < me.gramSizeUpper + 1; ++i) {
+                _addToMatchDict(lower, i);
+            }
+            me.exactSet[lower] = value;
+            return true;
+        };
+        var _addToMatchDict = function(value, gramSize) {
+            var grams = _iterateGrams(value, gramSize),
+                i = 0;
+            for (i; i < grams.length; ++i) {
+                var gram = grams[i];
+                if (gram in me.matchDict) { me.matchDict[gram].push(me.items[gramSize].length);
+                } else { me.matchDict[gram] = [me.items[gramSize].length]; }
+            }
+            me.items[gramSize].push(value);
+        };
+        var _get = function(value, minMatchScore) {
+            minMatchScore = minMatchScore || me.threshold;
+            var lower = me.returnToLowerCase ? value.toLowerCase() : value;
+            var results = [],
+                matches = {},
+                i = me.gramSizeLower;
+            for (i; i < me.gramSizeUpper + 1; ++i) {
+                var grams = _iterateGrams(lower, i),
+                    len = grams.length,
+                    j = 0;
+                for (j; j < len; ++j) {
+                    var gram = grams[j];
+                    if (gram in me.matchDict) {
+                        var dict = me.matchDict[gram];
+                        for (var k = 0; k < dict.length; ++k) {
+                            var index = dict[k];
+                            var other = me.items[i][index];
+                            if (other in matches) { matches[other] += 1;
+                            } else { matches[other] = 1; }
+                        }
+                    }
+                }
+            }
+            var item, score;
+            for (item in matches) {
+                score = 2 * matches[item] / (_iterateGrams(item, 2).length + _iterateGrams(lower, 2).length);
+                if (score > minMatchScore) {
+                    if (me.useLevenshtein) { score = levenshtein(lower, item); }
+                    if (score > minMatchScore) { results.push([score, me.exactSet[item]]); }
+                }
+            }
+            return results.sort(function(a, b) { return b[0] - a[0]; });
+        };
+        me.get = function(value, defaultValue, minMatchScore) {
+            var results = _get(value, minMatchScore);
+            if (defaultValue && results.length == 0) { return defaultValue; }
+            return results;
+        };
+        me.values = function() {
+            var values = [],
+                key;
+            for (key in me.exactSet) {
+                values.push(me.exactSet[key]);
+            }
+            return values;
+        };
+        if (source) { for (var i = 0; i < source.length; i++) { me.add(source[i]); } }
+        return me;
+    };
+    return FuzzySet;
+}());
+</script>
+
+<script>
+// Global state and utilities
+const state = {
+    // Shared contractor mapping across all tabs
+    sharedContractorMapping: {
+        map: new Map(),
+        fuzzyMatcher: null,
+        count: 0,
+        fileName: null
+    },
+    quickbooks: {
+        mappingFile: null,
+        inputFile: null,
+        contractorMap: {},
+        processedData: null,
+        currentView: 'formatted'
+    },
+    payroll: {
+        primaryFile: null,
+        selectedTable: null,
+        fileStore: [],
+        contractorMap: new Map(),
+        processedData: null,
+        currentView: 'aggregate'
+    },
+    reconciliation: {
+        discrepancies: [],
+        businessesWithDiscrepancies: new Set()
+    }
+};
+
+const ALL_QB_HEADERS = [
+    'Contractor Name', 'Business Name', 'Tax ID', 'Type', 'Date',
+    'Number', 'Original Amount', 'Paid Amount', 'Balance'
+];
+
+// Utility functions
+function log(message) {
+    const logEl = document.getElementById('global-log');
+    const ts = new Date().toLocaleTimeString();
+    logEl.textContent += `[${ts}] ${message}\n`;
+    logEl.scrollTop = logEl.scrollHeight;
+    logEl.style.display = 'block';
+}
+
+function setStatus(elementId, message, type = 'info') {
+    const statusEl = document.getElementById(elementId);
+    statusEl.textContent = message;
+    statusEl.className = `status ${type} show`;
+}
+
+function showTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+}
+
+// Date handling utilities
+function excelSerialToDate(n) {
+    if (typeof n !== 'number' || !isFinite(n)) return null;
+    const utc = Math.round((n - 25569) * 86400 * 1000);
+    return new Date(utc);
+}
+
+function parseToDate(v) {
+    if (v instanceof Date) return v;
+    if (typeof v === 'number') {
+        const d = excelSerialToDate(v);
+        return d && !isNaN(d.getTime()) ? d : null;
+    }
+    if (typeof v === 'string') {
+        const m = v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+        if (m) {
+            const mm = parseInt(m[1], 10) - 1;
+            const dd = parseInt(m[2], 10);
+            let yy = parseInt(m[3], 10);
+            if (yy < 100) yy += 2000;
+            const d = new Date(Date.UTC(yy, mm, dd));
+            return isNaN(d.getTime()) ? null : d;
+        }
+        const t = Date.parse(v);
+        if (!isNaN(t)) return new Date(t);
+    }
+    return null;
+}
+
+// Format currency for display
+function formatCurrency(value) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+    }).format(value);
+}
+
+// Excel styling utilities
+const ExcelStyles = {
+    // Color palette
+    colors: {
+        headerBg: 'FF4472C4',      // Professional blue
+        headerText: 'FFFFFFFF',     // White
+        subtotalBg: 'FFE7E6E6',    // Light gray
+        grandTotalBg: 'FF366092',  // Dark blue
+        alternateBg: 'FFF2F2F2',   // Very light gray
+        accentBg: 'FFFFC000',      // Gold/Yellow
+        pivotHeaderBg: 'FF5B9BD5', // Lighter blue
+        pivotSubtotalBg: 'FFD9E2F3' // Very light blue
+    },
+    
+    // Style definitions
+    headerStyle: {
+        font: { bold: true, color: { rgb: 'FFFFFFFF' }, size: 12 },
+        fill: { patternType: 'solid', fgColor: { rgb: 'FF4472C4' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+            top: { style: 'medium', color: { rgb: 'FF000000' } },
+            bottom: { style: 'medium', color: { rgb: 'FF000000' } },
+            left: { style: 'thin', color: { rgb: 'FF000000' } },
+            right: { style: 'thin', color: { rgb: 'FF000000' } }
+        }
+    },
+    
+    subtotalStyle: {
+        font: { bold: true },
+        fill: { patternType: 'solid', fgColor: { rgb: 'FFE7E6E6' } },
+        border: {
+            top: { style: 'thin', color: { rgb: 'FF808080' } },
+            bottom: { style: 'double', color: { rgb: 'FF000000' } }
+        }
+    },
+    
+    grandTotalStyle: {
+        font: { bold: true, color: { rgb: 'FFFFFFFF' } },
+        fill: { patternType: 'solid', fgColor: { rgb: 'FF366092' } },
+        border: {
+            top: { style: 'double', color: { rgb: 'FF000000' } },
+            bottom: { style: 'double', color: { rgb: 'FF000000' } }
+        }
+    },
+    
+    currencyFormat: '$#,##0.00',
+    dateFormat: 'mm/dd/yyyy',
+    
+    applyAlternatingRows: function(ws, startRow, endRow) {
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let r = startRow; r <= endRow; r++) {
+            if (r % 2 === 0) {
+                for (let c = range.s.c; c <= range.e.c; c++) {
+                    const ref = XLSX.utils.encode_cell({ r, c });
+                    const cell = ws[ref] || (ws[ref] = {});
+                    cell.s = cell.s || {};
+                    cell.s.fill = { patternType: 'solid', fgColor: { rgb: this.colors.alternateBg } };
+                }
+            }
+        }
+    },
+    
+    applyColumnWidths: function(ws, widths) {
+        ws['!cols'] = widths.map(w => ({ wch: w }));
+    },
+    
+    formatCurrencyColumn: function(ws, colIndex, startRow, endRow) {
+        for (let r = startRow; r <= endRow; r++) {
+            const ref = XLSX.utils.encode_cell({ r, c: colIndex });
+            const cell = ws[ref];
+            if (cell && typeof cell.v === 'number') {
+                cell.s = cell.s || {};
+                cell.s.numFmt = this.currencyFormat;
+                cell.z = this.currencyFormat;
+            }
+        }
+    },
+    
+    formatDateColumn: function(ws, colIndex, startRow, endRow) {
+        for (let r = startRow; r <= endRow; r++) {
+            const ref = XLSX.utils.encode_cell({ r, c: colIndex });
+            const cell = ws[ref];
+            if (cell) {
+                const dateObj = parseToDate(cell.v);
+                if (dateObj) {
+                    cell.t = 'd';
+                    cell.v = dateObj;
+                    cell.s = cell.s || {};
+                    cell.s.numFmt = this.dateFormat;
+                    cell.z = this.dateFormat;
+                }
+            }
+        }
+    }
+};
+
+// Shared contractor mapping functions
+async function loadSharedContractorMapping(file) {
+    try {
+        const text = await file.text();
+        const wb = XLSX.read(text, { type: 'string' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        
+        if (!rows.length) {
+            throw new Error('CSV file is empty');
+        }
+        
+        const hdr = rows[0].map(v => String(v).toLowerCase().trim());
+        const idxC = hdr.indexOf('contractor name');
+        const idxB = hdr.indexOf('business name');
+        
+        if (idxC === -1 || idxB === -1) {
+            throw new Error('CSV must have "Contractor Name" and "Business Name" columns');
+        }
+        
+        // Create both mappings for different use cases
+        const contractorToBusinessMap = new Map();
+        const businessToContractorMap = {};
+        const businessNames = [];
+        
+        for (let r = 1; r < rows.length; r++) {
+            const row = rows[r];
+            const contractor = String(row[idxC]).trim();
+            const business = String(row[idxB]).trim();
+            
+            if (contractor) {
+                // For payroll: contractor name -> business name
+                contractorToBusinessMap.set(normName(contractor), business || '');
+                
+                // For QuickBooks: business name -> contractor name
+                if (business) {
+                    businessToContractorMap[business] = contractor;
+                    businessNames.push(business);
+                }
+            }
+        }
+        
+        // Update shared state
+        state.sharedContractorMapping = {
+            map: contractorToBusinessMap,
+            qbMap: businessToContractorMap,
+            fuzzyMatcher: FuzzySet(businessNames),
+            count: contractorToBusinessMap.size,
+            fileName: file.name
+        };
+        
+        // Update status displays
+        updateMappingStatus();
+        
+        return state.sharedContractorMapping;
+        
+    } catch (err) {
+        throw err;
+    }
+}
+
+function updateMappingStatus() {
+    const mapping = state.sharedContractorMapping;
+    const statusText = mapping.count > 0 
+        ? `✓ Loaded ${mapping.count} contractor mappings from "${mapping.fileName}"`
+        : 'No contractor mapping loaded. Please upload the CSV file above.';
+    
+    const statusType = mapping.count > 0 ? 'success' : 'info';
+    
+    // Update shared status
+    setStatus('shared-contractor-status', statusText, statusType);
+    
+    // Update individual tab statuses
+    document.getElementById('qb-mapping-text').textContent = statusText;
+    document.getElementById('payroll-mapping-text').textContent = statusText;
+    
+    const qbStatus = document.getElementById('qb-mapping-status');
+    const payrollStatus = document.getElementById('payroll-mapping-status');
+    
+    qbStatus.className = `status ${statusType} show`;
+    payrollStatus.className = `status ${statusType} show`;
+}
+
+// Table display functions
+function createTableHTML(headers, rows, options = {}) {
+    const { highlightDiscrepancies = false, viewType = 'default' } = options;
+    let html = '<div class="data-table-container"><table class="data-table"><thead><tr>';
+
+    headers.forEach(header => {
+        const isNumeric = ['Amount', 'Payment', 'Balance', 'Total'].some(term => header.includes(term));
+        const style = isNumeric ? ' style="text-align: right;"' : '';
+        html += `<th${style}>${header}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    rows.forEach(row => {
+        const businessName = row[headers.indexOf('Business Name')] || '';
+        const isDiscrepancy = highlightDiscrepancies && businessName && 
+                            state.reconciliation.businessesWithDiscrepancies.has(businessName);
+        
+        let rowClass = isDiscrepancy ? 'discrepancy' : '';
+        
+        // Add specific classes for summary views
+        if (viewType === 'pivot' || viewType === 'summary') {
+            const label = String(row[0] || '');
+            if (label.trim() !== label) { // Detect indented detail rows
+                rowClass += ' summary-detail-row';
+            } else if (label && label !== 'Grand Total') { // Group headers
+                rowClass += ' summary-group-header';
+            }
+        }
+        
+        html += `<tr class="${rowClass.trim()}">`;
+        row.forEach((cell, idx) => {
+            const header = headers[idx];
+            const isNumeric = ['Amount', 'Payment', 'Balance', 'Total'].some(term => header.includes(term));
+            let value = cell;
+            
+            if (isNumeric && typeof cell === 'number') {
+                value = formatCurrency(cell);
+            }
+            
+            const style = isNumeric ? ' style="text-align: right;"' : '';
+            html += `<td${style}>${value || ''}</td>`;
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    return html;
+}
+
+// QuickBooks display functions
+function toggleQBView(view) {
+    state.quickbooks.currentView = view;
+    
+    // Update toggle buttons
+    document.querySelectorAll('#qb-data-preview .toggle-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Display the appropriate view with cleared search
+    document.getElementById('qb-summary-search').value = '';
+    displayQuickBooksData();
+}
+
+function displayQuickBooksData(filterTerm = '') {
+    const container = document.getElementById('qb-table-container');
+    const searchContainer = document.getElementById('qb-summary-search-container');
+    const processedData = state.quickbooks.processedData;
+    
+    if (!processedData) return;
+    
+    if (state.quickbooks.currentView === 'formatted') {
+        searchContainer.style.display = 'none'; // Hide search on formatted view
+        const columnsToShow = Array.from(document.querySelectorAll('#qb-columns input:checked')).map(el => el.dataset.column);
+        const rows = processedData.rawData.map(row => columnsToShow.map(col => row[col]));
+        container.innerHTML = createTableHTML(columnsToShow, rows, { highlightDiscrepancies: true });
+    } else { // Pivot View
+        searchContainer.style.display = 'block'; // Show search on pivot view
+        if (processedData.pivotData) {
+            let dataToDisplay = processedData.pivotData;
+            const term = filterTerm.toLowerCase();
+
+            if (term) {
+                const filtered = [];
+                let currentGroup = null;
+                for (const row of processedData.pivotData) {
+                    const label = String(row[0] || '').toLowerCase();
+                    if (label.trim() === label) { // It's a group header
+                        if (label.includes(term)) {
+                            currentGroup = row;
+                            filtered.push(currentGroup);
+                        } else {
+                            currentGroup = null;
+                        }
+                    } else if (currentGroup) { // It's a detail row with a matched parent
+                        filtered.push(row);
+                    }
+                }
+                dataToDisplay = filtered;
+            }
+            container.innerHTML = createTableHTML(
+                ['Business Name', 'Sum of Paid Amount'],
+                dataToDisplay,
+                { highlightDiscrepancies: true, viewType: 'pivot' }
+            );
+        }
+    }
+}
+
+// Payroll display functions  
+function togglePayrollView(view) {
+    state.payroll.currentView = view;
+    
+    // Update toggle buttons
+    document.querySelectorAll('#payroll-data-preview .toggle-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Display the appropriate view with cleared search
+    document.getElementById('payroll-summary-search').value = '';
+    displayPayrollData();
+}
+
+function displayPayrollData(filterTerm = '') {
+    const container = document.getElementById('payroll-table-container');
+    const searchContainer = document.getElementById('payroll-summary-search-container');
+    const processedData = state.payroll.processedData;
+    
+    if (!processedData || !processedData.aggregateAOA) return;
+    
+    if (state.payroll.currentView === 'aggregate') {
+        searchContainer.style.display = 'none'; // Hide search on aggregate view
+        const headers = processedData.aggregateAOA[0];
+        const rows = processedData.aggregateAOA.slice(1);
+        const defaultColumns = ['Client Name', 'Date', 'Provider Name', 'Business Name', 'Provider Payment', 'SourceFile'];
+        const columnIndices = [];
+        const columnsToShow = [];
+        defaultColumns.forEach(col => {
+            const idx = headers.findIndex(h => h === col);
+            if (idx !== -1) {
+                columnIndices.push(idx);
+                columnsToShow.push(col);
+            }
+        });
+        const filteredRows = rows.map(row => columnIndices.map(idx => row[idx]));
+        container.innerHTML = createTableHTML(columnsToShow, filteredRows, { highlightDiscrepancies: true });
+    } else { // Summary View
+        searchContainer.style.display = 'block'; // Show search on summary view
+        if (processedData.summaryData) {
+            let dataToDisplay = processedData.summaryData;
+            const term = filterTerm.toLowerCase();
+
+            if (term) {
+                const filtered = [];
+                let currentGroup = null;
+                for (const row of processedData.summaryData) {
+                    const label = String(row[0] || '').toLowerCase();
+                    if (label.trim() === label) { // It's a group header
+                        if (label.includes(term)) {
+                            currentGroup = row;
+                            filtered.push(currentGroup);
+                        } else {
+                            currentGroup = null;
+                        }
+                    } else if (currentGroup) { // It's a detail row with a matched parent
+                        filtered.push(row);
+                    }
+                }
+                dataToDisplay = filtered;
+            }
+            container.innerHTML = createTableHTML(
+                ['Row Labels', 'Sum of Provider Payment'],
+                dataToDisplay,
+                { highlightDiscrepancies: true, viewType: 'summary' }
+            );
+        }
+    }
+}
+
+// QuickBooks specific functions
+async function processQuickBooksData(jsonData) {
+    const mapping = state.sharedContractorMapping.qbMap || {};
+    const fuzzyMatcher = state.sharedContractorMapping.fuzzyMatcher;
+    const threshold = document.getElementById('qb-threshold').value / 100;
+    
+    const headerRow = jsonData[0];
+    const cols = {};
+    const requiredHeaders = ['Type', 'Date', 'Num', 'Number', 'Original Amount', 'Paid Amount', 'Balance'];
+    
+    headerRow.forEach((val, idx) => {
+        if (typeof val === 'string') {
+            const text = val.trim();
+            if (requiredHeaders.includes(text)) {
+                const key = (text === 'Num') ? 'Number' : text;
+                cols[key] = idx;
+            }
+        }
+    });
+
+    const missing = ['Type', 'Date', 'Number', 'Original Amount', 'Paid Amount', 'Balance'].filter(h => !cols[h]);
+    if (missing.length > 0) throw new Error(`Missing required columns: ${missing.join(', ')}`);
+
+    const PAYEE_COL = 1;
+    const TAXID_COL = 2;
+    const taxid_pattern = /^(?:\d{2}-\d{7}|\d{3}-\d{2}-\d{4})$/;
+    
+    const dataRows = [];
+    let currentPayee = null;
+    let currentTaxid = null;
+
+    for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        if (!row || row.every(cell => cell === null)) continue;
+
+        if (row[PAYEE_COL] && row.filter(c => c !== null).length === 1) {
+            currentPayee = String(row[PAYEE_COL]).trim();
+            continue;
+        }
+        
+        const taxVal = row[TAXID_COL];
+        if (typeof taxVal === 'string' && taxid_pattern.test(taxVal.trim()) && row.filter(c => c !== null).length === 1) {
+            currentTaxid = taxVal.trim();
+            continue;
+        }
+        
+        if (typeof row[PAYEE_COL] === 'string' && row[PAYEE_COL].trim().toLowerCase().startsWith('total')) {
+            continue;
+        }
+
+        if (row[cols['Type']] !== null) {
+            const dateCell = row[cols['Date']];
+            let dateStr = '';
+            if (typeof dateCell === 'number') { 
+                const jsDate = XLSX.SSF.parse_date_code(dateCell);
+                dateStr = `${String(jsDate.m).padStart(2, '0')}/${String(jsDate.d).padStart(2, '0')}/${jsDate.y}`;
+            } else if (dateCell) {
+                dateStr = String(dateCell);
+            }
+            
+            const business = currentPayee || '';
+            let contractor = mapping[business];
+            if (!contractor && fuzzyMatcher) {
+                const matches = fuzzyMatcher.get(business, null, threshold);
+                if (matches && matches.length > 0) {
+                    contractor = mapping[matches[0][1]];
+                }
+            }
+            
+            dataRows.push({
+                'Contractor Name': contractor || '',
+                'Business Name': business,
+                'Tax ID': currentTaxid,
+                'Type': row[cols['Type']],
+                'Date': dateStr,
+                'Number': row[cols['Number']],
+                'Original Amount': row[cols['Original Amount']],
+                'Paid Amount': row[cols['Paid Amount']],
+                'Balance': row[cols['Balance']]
+            });
+        }
+    }
+    
+    return dataRows;
+}
+
+function generateQuickBooksExcel(dataRows, outputName) {
+    const includeTotals = document.getElementById('qb-include-totals').checked;
+    const selectedColumns = Array.from(document.querySelectorAll('#qb-columns input:checked'))
+        .map(el => el.dataset.column);
+
+    let displayData = dataRows.map(row => {
+        const selectedRow = {};
+        selectedColumns.forEach(col => selectedRow[col] = row[col]);
+        return selectedRow;
+    });
+
+    if (includeTotals) {
+        const totals = {};
+        dataRows.forEach(rec => {
+            const key = `${rec['Business Name']}|${rec['Tax ID']}`;
+            const paidAmt = Number(rec['Paid Amount']) || 0;
+            totals[key] = (totals[key] || 0) + paidAmt;
+        });
+        
+        const uniquePayees = [...new Map(dataRows.map(item => [item['Business Name'], item])).values()];
+        uniquePayees.forEach(rec => {
+            const key = `${rec['Business Name']}|${rec['Tax ID']}`;
+            const totalRowData = {
+                'Type': 'Total', 
+                'Paid Amount': totals[key], 
+                'Business Name': rec['Business Name'], 
+                'Contractor Name': rec['Contractor Name'], 
+                'Tax ID': rec['Tax ID']
+            };
+            const selectedTotalRow = {};
+            selectedColumns.forEach(col => selectedTotalRow[col] = totalRowData[col] || '');
+            displayData.push(selectedTotalRow);
+        });
+    }
+
+    const wb = XLSX.utils.book_new();
+    
+    // Formatted sheet
+    const ws = XLSX.utils.json_to_sheet(displayData, { header: selectedColumns });
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
+    ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+    
+    // Apply header styling
+    for (let c = range.s.c; c <= range.e.c; c++) {
+        const ref = XLSX.utils.encode_cell({ r: 0, c });
+        const cell = ws[ref] || (ws[ref] = {});
+        cell.s = ExcelStyles.headerStyle;
+    }
+    
+    // Format date column
+    const dateColIndex = selectedColumns.indexOf('Date');
+    if (dateColIndex !== -1) {
+        ExcelStyles.formatDateColumn(ws, dateColIndex, 1, range.e.r);
+    }
+    
+    // Format currency columns
+    ['Original Amount', 'Paid Amount', 'Balance'].forEach(col => {
+        const colIndex = selectedColumns.indexOf(col);
+        if (colIndex !== -1) {
+            ExcelStyles.formatCurrencyColumn(ws, colIndex, 1, range.e.r);
+        }
+    });
+    
+    // Apply alternating rows
+    ExcelStyles.applyAlternatingRows(ws, 1, range.e.r);
+    
+    // Apply column widths
+    const widths = selectedColumns.map(col => {
+        switch(col) {
+            case 'Business Name': return 35;
+            case 'Contractor Name': return 25;
+            case 'Tax ID': return 15;
+            case 'Type': return 12;
+            case 'Date': return 12;
+            case 'Number': return 15;
+            default: return 15;
+        }
+    });
+    ExcelStyles.applyColumnWidths(ws, widths);
+    
+    // Style total rows
+    if (includeTotals) {
+        for (let r = 1; r <= range.e.r; r++) {
+            const typeColIndex = selectedColumns.indexOf('Type');
+            if (typeColIndex !== -1) {
+                const typeRef = XLSX.utils.encode_cell({ r, c: typeColIndex });
+                if (ws[typeRef]?.v === 'Total') {
+                    for (let c = range.s.c; c <= range.e.c; c++) {
+                        const ref = XLSX.utils.encode_cell({ r, c });
+                        const cell = ws[ref] || (ws[ref] = {});
+                        cell.s = ExcelStyles.subtotalStyle;
+                        
+                        if (selectedColumns[c] === 'Type' || selectedColumns[c] === 'Paid Amount') {
+                            cell.s.fill = { patternType: 'solid', fgColor: { rgb: ExcelStyles.colors.accentBg } };
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Formatted');
+    
+    // Pivot Summary sheet
+    const pivotData = createQuickBooksPivot(dataRows, selectedColumns);
+    const pivotWs = createQuickBooksPivot(dataRows, selectedColumns, true);
+    if (pivotWs) {
+        XLSX.utils.book_append_sheet(wb, pivotWs, 'Pivot Summary');
+    }
+    
+    // Store processed data for combined export and display
+    state.quickbooks.processedData = {
+        formattedSheet: ws,
+        pivotSheet: pivotWs,
+        rawData: dataRows,
+        pivotData: pivotData
+    };
+    
+    // Show data preview
+    document.getElementById('qb-data-preview').style.display = 'block';
+    displayQuickBooksData();
+    
+    XLSX.writeFile(wb, outputName);
+    return true;
+}
+
+function createQuickBooksPivot(dataRows, selectedColumns, returnWorksheet = false) {
+    if (!selectedColumns.includes('Business Name') || !selectedColumns.includes('Paid Amount')) {
+        return null;
+    }
+    
+    const pivotSourceData = {};
+    let grandTotal = 0;
+    
+    dataRows.forEach(row => {
+        const business = row['Business Name'];
+        const date = row['Date'];
+        const amount = Number(row['Paid Amount']) || 0;
+        
+        if (!business || !date) return;
+        grandTotal += amount;
+        
+        if (!pivotSourceData[business]) {
+            pivotSourceData[business] = { total: 0, dates: {} };
+        }
+        pivotSourceData[business].total += amount;
+        pivotSourceData[business].dates[date] = (pivotSourceData[business].dates[date] || 0) + amount;
+    });
+
+    const pivotRows = [];
+    pivotRows.push(['Business Name', 'Sum of Paid Amount']);
+
+    Object.keys(pivotSourceData).sort().forEach(business => {
+        pivotRows.push([business, pivotSourceData[business].total]);
+        Object.keys(pivotSourceData[business].dates).sort().forEach(date => {
+            pivotRows.push([`  ${date}`, pivotSourceData[business].dates[date]]);
+        });
+    });
+    
+    pivotRows.push([]);
+    pivotRows.push(['Grand Total', grandTotal]);
+    
+    if (returnWorksheet) {
+        // Create and format the worksheet
+        const pivotWs = XLSX.utils.aoa_to_sheet(pivotRows);
+        const pivotRange = XLSX.utils.decode_range(pivotWs['!ref']);
+        
+        // Header row
+        for (let c = 0; c <= 1; c++) {
+            const ref = XLSX.utils.encode_cell({ r: 0, c });
+            const cell = pivotWs[ref] || (pivotWs[ref] = {});
+            cell.s = {
+                font: { bold: true },
+                fill: { patternType: 'solid', fgColor: { rgb: ExcelStyles.colors.pivotHeaderBg } },
+                alignment: { horizontal: 'center', vertical: 'center' }
+            };
+        }
+        
+        // Format amounts and style rows
+        for (let r = 1; r <= pivotRange.e.r; r++) {
+            const labelCell = pivotWs[XLSX.utils.encode_cell({ r, c: 0 })];
+            const amountRef = XLSX.utils.encode_cell({ r, c: 1 });
+            const amountCell = pivotWs[amountRef];
+            
+            if (amountCell && typeof amountCell.v === 'number') {
+                amountCell.s = amountCell.s || {};
+                amountCell.s.numFmt = ExcelStyles.currencyFormat;
+                amountCell.z = ExcelStyles.currencyFormat;
+            }
+            
+            // Style based on row type
+            if (labelCell) {
+                const label = String(labelCell.v);
+                if (label === 'Grand Total') {
+                    // Grand total row
+                    for (let c = 0; c <= 1; c++) {
+                        const ref = XLSX.utils.encode_cell({ r, c });
+                        const cell = pivotWs[ref] || (pivotWs[ref] = {});
+                        cell.s = ExcelStyles.grandTotalStyle;
+                    }
+                } else if (!label.startsWith('  ')) {
+                    // Business subtotal row
+                    for (let c = 0; c <= 1; c++) {
+                        const ref = XLSX.utils.encode_cell({ r, c });
+                        const cell = pivotWs[ref] || (pivotWs[ref] = {});
+                        cell.s = {
+                            font: { bold: true },
+                            fill: { patternType: 'solid', fgColor: { rgb: ExcelStyles.colors.pivotSubtotalBg } }
+                        };
+                    }
+                }
+            }
+        }
+        
+        pivotWs['!cols'] = [{ wch: 40 }, { wch: 20 }];
+        return pivotWs;
+    }
+    
+    // Return data array for display, excluding the grand total for cleaner searching
+    return pivotRows.slice(1, -2);
+}
+
+// Utility function
+function normName(s) {
+    return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+// Table discovery functions
+function normalizeZipPath(p) {
+    if (!p) return null;
+    p = String(p).replace(/^\/+/, '');
+    if (!p.startsWith('xl/')) p = 'xl/' + p.replace(/^xl\//, '');
+    const out = [];
+    for (const seg of p.split('/')) {
+        if (!seg || seg === '.') continue;
+        if (seg === '..') { out.pop(); continue; }
+        out.push(seg);
+    }
+    return out.join('/');
+}
+
+function textOf(wb, path) {
+    if (!wb.files) return null;
+    const dec = new TextDecoder('utf-8');
+    const tryPaths = [path, '/' + path];
+    for (const tp of tryPaths) {
+        const key = tp.replace(/^\/+/, '');
+        if (wb.files[key]) return dec.decode(wb.files[key].content);
+    }
+    return null;
+}
+
+async function findNamedTables(buffer) {
+    const wb = XLSX.read(buffer, { bookFiles: true });
+    const tables = {};
+
+    const workbookXml = textOf(wb, 'xl/workbook.xml') || '';
+    const wbRels = textOf(wb, 'xl/_rels/workbook.xml.rels') || textOf(wb, '/xl/_rels/workbook.xml.rels');
+    if (!wbRels) return tables;
+
+    const sheetNameByRid = {};
+    const sheetTags = workbookXml.match(/<sheet [^>]*\/>/g) || [];
+    for (const tag of sheetTags) {
+        const mName = tag.match(/name="([^"]+)"/);
+        const mRid = tag.match(/r:id="([^"]+)"/);
+        const name = mName ? mName[1] : undefined;
+        const rId = mRid ? mRid[1] : undefined;
+        if (name && rId) sheetNameByRid[rId] = name;
+    }
+
+    const sheetPathByName = {};
+    const relTags = wbRels.match(/<Relationship [^>]*\/>/g) || [];
+    for (const rt of relTags) {
+        const mTarget = rt.match(/Target="([^"]+)"/);
+        const mId = rt.match(/Id="([^"]+)"/);
+        const target = mTarget ? mTarget[1] : '';
+        if (!/worksheets\//i.test(target)) continue;
+        const rId = mId ? mId[1] : undefined;
+        const sheetName = rId ? sheetNameByRid[rId] : undefined;
+        if (!sheetName) continue;
+        sheetPathByName[sheetName] = normalizeZipPath(target);
+    }
+
+    for (const [sheetName, sheetPath] of Object.entries(sheetPathByName)) {
+        const baseFile = sheetPath.split('/').pop();
+        const relsPath = normalizeZipPath(`xl/worksheets/_rels/${baseFile}.rels`);
+        const sheetRelsXml = textOf(wb, relsPath);
+        if (!sheetRelsXml) continue;
+
+        const tableRelTags = sheetRelsXml.match(/<Relationship [^>]*\/>/g) || [];
+        for (const tr of tableRelTags) {
+            const mTarget = tr.match(/Target="([^"]+)"/);
+            const target = mTarget ? mTarget[1] : '';
+            if (!/tables\//i.test(target)) continue;
+
+            let tablePath = normalizeZipPath(target);
+            if (!tablePath.startsWith('xl/')) {
+                const baseDir = sheetPath.replace(/[^/]+$/, '');
+                tablePath = normalizeZipPath(baseDir + target);
+            }
+            const tXml = textOf(wb, tablePath);
+            if (!tXml) continue;
+
+            const mName = tXml.match(/\bname="([^"]+)"/) || tXml.match(/\bdisplayName="([^"]+)"/);
+            const mRef = tXml.match(/\bref="([^"]+)"/);
+            const name = mName ? mName[1] : undefined;
+            const ref = mRef ? mRef[1] : undefined;
+
+            const columns = [];
+            const colTags = tXml.match(/<tableColumn\b[^>]*>/g) || [];
+            for (const ct of colTags) {
+                const mCol = ct.match(/\bname="([^"]+)"/);
+                if (mCol) columns.push(mCol[1]);
+            }
+
+            if (name && ref) {
+                tables[name] = { sheetName, ref, columns };
+            }
+        }
+    }
+
+    return tables;
+}
+
+async function extractTableData(buffer, tableName) {
+    const tbls = await findNamedTables(buffer);
+    const meta = tbls[tableName];
+    if (!meta) throw new Error(`Table '${tableName}' not found.`);
+    const { sheetName, ref, columns } = meta;
+
+    const wb = XLSX.read(buffer);
+    let ws = sheetName ? wb.Sheets[sheetName] : null;
+    if (!ws) {
+        ws = wb.Sheets[wb.SheetNames[0]];
+        if (!ws) {
+            return { header: (columns && columns.length ? columns : []), rows: [] };
+        }
+    }
+
+    let data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, range: ref });
+    if (!data || data.length === 0) {
+        return { header: (columns && columns.length ? columns : []), rows: [] };
+    }
+
+    const firstRow = data[0] || [];
+    const isBlankHeader = firstRow.every(v => v === null || v === '');
+    const header = (isBlankHeader && columns && columns.length) ? columns : firstRow;
+
+    return { header, rows: data.slice(1) };
+}
+
+// Payroll specific functions
+function buildPayrollSummary(header, rows) {
+    const lc = header.map(h => String(h || '').toLowerCase());
+    const idxBusiness = lc.indexOf('business name');
+    const idxProvider = lc.indexOf('provider name');
+    const idxKey = (idxBusiness !== -1) ? idxBusiness : idxProvider;
+    const idxPayment = lc.indexOf('provider payment');
+    const idxSource = lc.indexOf('sourcefile');
+
+    const map = new Map();
+    let grand = 0;
+
+    for (const row of rows) {
+        const key = String(row[idxKey] ?? '').trim();
+        if (!key) continue;
+        const src = String(row[idxSource] ?? '').trim();
+        const vRaw = row[idxPayment];
+        const val = (typeof vRaw === 'number') ? vRaw : (parseFloat(String(vRaw).replace(/[,]/g, '')) || 0);
+
+        if (!map.has(key)) map.set(key, { total: 0, sources: new Map() });
+        const rec = map.get(key);
+        rec.total += val;
+
+        if (src) {
+            const prev = rec.sources.get(src) || 0;
+            rec.sources.set(src, prev + val);
+        }
+        grand += val;
+    }
+
+    const aoa = [['Row Labels', 'Sum of Provider Payment']];
+    const rowLevels = [0];
+    const summaryData = [];
+
+    const keys = Array.from(map.keys()).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+    for (const k of keys) {
+        const { total, sources } = map.get(k);
+        aoa.push([k, total]); 
+        rowLevels.push(0);
+        summaryData.push([k, total]);
+
+        const files = Array.from(sources.keys()).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+        for (const f of files) {
+            aoa.push(['    ' + f, sources.get(f)]);
+            rowLevels.push(1);
+            summaryData.push(['    ' + f, sources.get(f)]);
+        }
+    }
+    aoa.push(['Grand Total', grand]); 
+    rowLevels.push(0);
+    summaryData.push(['Grand Total', grand]);
+
+    return { aoa, rowLevels, summaryData: summaryData.slice(0, -1) }; // Exclude Grand Total for display
+}
+
+// Count unique business/source combinations for payroll
+function countUniquePayrollRecords(aggregateAOA) {
+    if (!aggregateAOA || aggregateAOA.length < 2) return 0;
+    
+    const header = aggregateAOA[0];
+    const businessIdx = header.findIndex(h => String(h || '').toLowerCase() === 'business name');
+    const sourceIdx = header.findIndex(h => String(h || '').toLowerCase() === 'sourcefile');
+    
+    if (businessIdx === -1 || sourceIdx === -1) return aggregateAOA.length - 1;
+    
+    const uniqueCombinations = new Set();
+    
+    for (let i = 1; i < aggregateAOA.length; i++) {
+        const business = aggregateAOA[i][businessIdx] || '';
+        const source = aggregateAOA[i][sourceIdx] || '';
+        if (business || source) {
+            uniqueCombinations.add(`${business}|${source}`);
+        }
+    }
+    
+    return uniqueCombinations.size;
+}
+
+async function createPayrollWorkbook(aggregateAOA, filename, saveForCombined = false) {
+    // Create a filtered version of the data with only the default columns
+    const allHeaders = aggregateAOA[0] || [];
+    const defaultColumns = ['Client Name', 'Date', 'Provider Name', 'Business Name', 'Provider Payment', 'SourceFile'];
+    
+    // Find indices of default columns that exist in the data
+    const columnIndices = [];
+    const filteredHeaders = [];
+    defaultColumns.forEach(col => {
+        const idx = allHeaders.findIndex(h => h === col);
+        if (idx !== -1) {
+            columnIndices.push(idx);
+            filteredHeaders.push(col);
+        }
+    });
+    
+    // Create filtered data array
+    const filteredAOA = [filteredHeaders];
+    for (let i = 1; i < aggregateAOA.length; i++) {
+        const filteredRow = columnIndices.map(idx => aggregateAOA[i][idx]);
+        filteredAOA.push(filteredRow);
+    }
+    
+    const wsAgg = XLSX.utils.aoa_to_sheet(filteredAOA);
+    const rangeAgg = XLSX.utils.decode_range(wsAgg['!ref']);
+
+    wsAgg['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: rangeAgg.e.c, r: 0 } }) };
+    wsAgg['!freeze'] = { xSplit: 0, ySplit: 1 };
+
+    // Apply header styling
+    for (let c = rangeAgg.s.c; c <= rangeAgg.e.c; c++) {
+        const ref = XLSX.utils.encode_cell({ r: 0, c });
+        const cell = wsAgg[ref] || (wsAgg[ref] = {});
+        cell.s = ExcelStyles.headerStyle;
+    }
+
+    // Format date column - find it in the filtered headers
+    const dateColIndex = filteredHeaders.findIndex(h => h === 'Date');
+    if (dateColIndex >= 0) {
+        // First pass: convert Excel serial dates to proper date objects
+        for (let r = 1; r <= rangeAgg.e.r; r++) {
+            const ref = XLSX.utils.encode_cell({ r, c: dateColIndex });
+            const cell = wsAgg[ref];
+            if (cell) {
+                const dateObj = parseToDate(cell.v);
+                if (dateObj) {
+                    cell.t = 'd';
+                    cell.v = dateObj;
+                    cell.s = cell.s || {};
+                    cell.s.numFmt = ExcelStyles.dateFormat;
+                    cell.z = ExcelStyles.dateFormat;
+                }
+            }
+        }
+    }
+    
+    // Format currency columns
+    const paymentColIndex = filteredHeaders.findIndex(h => h === 'Provider Payment');
+    if (paymentColIndex >= 0) {
+        ExcelStyles.formatCurrencyColumn(wsAgg, paymentColIndex, 1, rangeAgg.e.r);
+    }
+
+    // Apply alternating rows
+    ExcelStyles.applyAlternatingRows(wsAgg, 1, rangeAgg.e.r);
+
+    // Auto-fit columns for the 'Payroll Data' sheet
+    const colWidths = filteredHeaders.map((header, i) => {
+        // Start with the header length, plus padding for the filter dropdown arrow
+        let maxLength = (header || '').length + 2;
+        
+        // Iterate over the data rows for this column
+        for (let r = 1; r <= rangeAgg.e.r; r++) {
+            const ref = XLSX.utils.encode_cell({ r, c: i });
+            const cell = wsAgg[ref];
+            if (cell && cell.v != null) {
+                let cellValue = String(cell.v);
+                
+                // For accurate width, check for formatted values
+                if (cell.t === 'd' && cell.v instanceof Date) {
+                    // Use 'mm/dd/yyyy' format for length calculation
+                    cellValue = `${String(cell.v.getUTCMonth() + 1).padStart(2,'0')}/${String(cell.v.getUTCDate()).padStart(2,'0')}/${cell.v.getUTCFullYear()}`;
+                } else if (cell.z === ExcelStyles.currencyFormat && typeof cell.v === 'number') {
+                    cellValue = formatCurrency(cell.v);
+                }
+
+                const cellLength = cellValue.length;
+                if (cellLength > maxLength) {
+                    maxLength = cellLength;
+                }
+            }
+        }
+        
+        // Apply a little extra padding and cap the width to a reasonable maximum
+        return { wch: Math.min(50, maxLength + 2) }; 
+    });
+    wsAgg['!cols'] = colWidths;
+
+    // Create Summary sheet (using full data, not filtered)
+    const dataRows = aggregateAOA.slice(1);
+    const { aoa: sumAOA, rowLevels, summaryData } = buildPayrollSummary(aggregateAOA[0], dataRows);
+    const wsSum = XLSX.utils.aoa_to_sheet(sumAOA);
+    const rangeSum = XLSX.utils.decode_range(wsSum['!ref']);
+
+    wsSum['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: rangeSum.e.c, r: 0 } }) };
+    wsSum['!freeze'] = { xSplit: 0, ySplit: 1 };
+
+    // Style summary sheet
+    for (let c = 0; c <= 1; c++) {
+        const ref = XLSX.utils.encode_cell({ r: 0, c });
+        const cell = wsSum[ref] || (wsSum[ref] = {});
+        cell.s = {
+            font: { bold: true, color: { rgb: 'FFFFFFFF' } },
+            fill: { patternType: 'solid', fgColor: { rgb: ExcelStyles.colors.pivotHeaderBg } },
+            alignment: { horizontal: 'center', vertical: 'center' }
+        };
+    }
+
+    // Format amounts and apply row styles
+    for (let r = 1; r <= rangeSum.e.r; r++) {
+        const amountRef = XLSX.utils.encode_cell({ r, c: 1 });
+        const amountCell = wsSum[amountRef];
+        
+        if (amountCell && typeof amountCell.v === 'number') {
+            amountCell.s = amountCell.s || {};
+            amountCell.s.numFmt = ExcelStyles.currencyFormat;
+            amountCell.z = ExcelStyles.currencyFormat;
+            amountCell.s.alignment = { horizontal: 'right' };
+        }
+
+        const label = String(wsSum['A' + (r + 1)]?.v || '');
+        const isGrand = label === 'Grand Total';
+        const isProviderRow = rowLevels[r] === 0 && !isGrand;
+        const isDetailRow = rowLevels[r] === 1;
+
+        for (let c = 0; c <= 1; c++) {
+            const ref = XLSX.utils.encode_cell({ r, c });
+            const cell = wsSum[ref] || (wsSum[ref] = {});
+            cell.s = cell.s || {};
+            
+            if (isGrand) {
+                cell.s = ExcelStyles.grandTotalStyle;
+            } else if (isProviderRow) {
+                cell.s.font = { bold: true };
+                cell.s.fill = { patternType: 'solid', fgColor: { rgb: ExcelStyles.colors.pivotSubtotalBg } };
+            } else if (isDetailRow && r % 2 === 0) {
+                cell.s.fill = { patternType: 'solid', fgColor: { rgb: ExcelStyles.colors.alternateBg } };
+            }
+        }
+    }
+
+    wsSum['!cols'] = [{ wch: 40 }, { wch: 20 }];
+    wsSum['!rows'] = rowLevels.map(level => ({ level }));
+    wsSum['!outline'] = { above: true };
+
+    if (saveForCombined) {
+        // Calculate total Provider Payment for Combined Summary
+        const header = aggregateAOA[0] || [];
+        const paymentColIndex = header.findIndex(h => String(h || '').toLowerCase() === 'provider payment');
+        let totalPayment = 0;
+        
+        if (paymentColIndex >= 0) {
+            for (let r = 1; r < aggregateAOA.length; r++) {
+                const val = aggregateAOA[r][paymentColIndex];
+                const numVal = typeof val === 'number' ? val : (parseFloat(String(val || '').replace(/[,$]/g, '')) || 0);
+                totalPayment += numVal;
+            }
+        }
+        
+        // Count unique business/source combinations
+        const uniqueCount = countUniquePayrollRecords(aggregateAOA);
+        
+        state.payroll.processedData = {
+            aggregateSheet: wsAgg,
+            summarySheet: wsSum,
+            rawData: dataRows,
+            aggregateAOA: aggregateAOA,
+            summaryData: summaryData,
+            totalPayment: totalPayment,
+            uniqueRecordCount: uniqueCount
+        };
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, wsAgg, 'Payroll Data');
+    XLSX.utils.book_append_sheet(wb, wsSum, 'Summary');
+    
+    // Show data preview
+    document.getElementById('payroll-data-preview').style.display = 'block';
+    displayPayrollData();
+    
+    if (filename) {
+        XLSX.writeFile(wb, filename);
+    }
+    
+    return wb;
+}
+
+// Combined export function
+async function createCombinedExport() {
+    const includeQB = document.getElementById('include-quickbooks').checked;
+    const includePayroll = document.getElementById('include-payroll').checked;
+    const includeRecon = document.getElementById('include-reconciliation').checked;
+    const includeCombined = document.getElementById('include-combined-summary').checked;
+    
+    if (!includeQB && !includePayroll && !includeRecon && !includeCombined) {
+        setStatus('combined-status', 'Please select at least one export option', 'warning');
+        return;
+    }
+    
+    const wb = XLSX.utils.book_new();
+    
+    // Add QuickBooks sheets
+    if (includeQB && state.quickbooks.processedData) {
+        if (state.quickbooks.processedData.formattedSheet) {
+            XLSX.utils.book_append_sheet(wb, state.quickbooks.processedData.formattedSheet, 'QB Formatted');
+        }
+        if (state.quickbooks.processedData.pivotSheet) {
+            XLSX.utils.book_append_sheet(wb, state.quickbooks.processedData.pivotSheet, 'QB Pivot Summary');
+        }
+    }
+    
+    // Add Payroll sheets
+    if (includePayroll && state.payroll.processedData) {
+        if (state.payroll.processedData.aggregateSheet) {
+            XLSX.utils.book_append_sheet(wb, state.payroll.processedData.aggregateSheet, 'Payroll Data');
+        }
+        if (state.payroll.processedData.summarySheet) {
+            XLSX.utils.book_append_sheet(wb, state.payroll.processedData.summarySheet, 'Payroll Summary');
+        }
+    }
+    
+    // Add Reconciliation sheet
+    if (includeRecon && (state.quickbooks.processedData || state.payroll.processedData)) {
+        // Generate reconciliation data if not already done
+        const totals = extractBusinessTotals({
+            quickbooks: state.quickbooks.processedData,
+            payroll: state.payroll.processedData
+        });
+        const threshold = parseFloat(document.getElementById('recon-threshold').value) || 1;
+        const discrepancies = analyzeDiscrepancies(totals, threshold);
+        
+        // Create reconciliation sheet
+        const reconData = [
+            ['Reconciliation Analysis'],
+            [],
+            ['Generated:', new Date().toLocaleString()],
+            ['Threshold:', `${threshold.toFixed(2)}`],
+            [],
+            ['Business Name', 'QB Total', 'Payroll Total', 'Difference', 'Explanation']
+        ];
+        
+        discrepancies.forEach(disc => {
+            reconData.push([
+                disc.business,
+                disc.qbTotal,
+                disc.payrollTotal,
+                disc.difference,
+                disc.explanation
+            ]);
+        });
+        
+        const reconWs = XLSX.utils.aoa_to_sheet(reconData);
+        
+        // Apply styling
+        reconWs['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }];
+        
+        // Title
+        reconWs['A1'].s = {
+            font: { bold: true, size: 16 },
+            alignment: { horizontal: 'center' }
+        };
+        
+        // Headers
+        for (let c = 0; c < 5; c++) {
+            const ref = XLSX.utils.encode_cell({ r: 5, c });
+            const cell = reconWs[ref] || (reconWs[ref] = {});
+            cell.s = ExcelStyles.headerStyle;
+        }
+        
+        // Format currency columns and apply styling
+        for (let r = 6; r < reconData.length; r++) {
+            if (reconData[r].length >= 4) {
+                // Currency formatting for columns 1-3
+                for (let c = 1; c <= 3; c++) {
+                    const ref = XLSX.utils.encode_cell({ r, c });
+                    const cell = reconWs[ref];
+                    if (cell && typeof cell.v === 'number') {
+                        cell.s = cell.s || {};
+                        cell.s.numFmt = ExcelStyles.currencyFormat;
+                        cell.z = ExcelStyles.currencyFormat;
+                        
+                        // Special styling for difference column
+                        if (c === 3) {
+                            cell.s.font = {
+                                bold: true,
+                                color: { rgb: cell.v >= 0 ? 'FF0000FF' : 'FFFF0000' }
+                            };
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Apply alternating rows
+        ExcelStyles.applyAlternatingRows(reconWs, 6, reconData.length - 1);
+        
+        reconWs['!cols'] = [
+            { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 50 }
+        ];
+        
+        XLSX.utils.book_append_sheet(wb, reconWs, 'Reconciliation');
+    }
+    
+    // Create combined summary sheet
+    if (includeCombined) {
+        const summaryData = [];
+        summaryData.push(['Combined Export Summary']);
+        summaryData.push([]);
+        summaryData.push(['Report Type', 'Records', 'Total Amount', 'Date Generated']);
+        
+        let qbTotal = 0;
+        let qbCount = 0;
+        if (state.quickbooks.processedData && state.quickbooks.processedData.rawData) {
+            qbCount = state.quickbooks.processedData.rawData.length;
+            qbTotal = state.quickbooks.processedData.rawData.reduce((sum, row) => 
+                sum + (Number(row['Paid Amount']) || 0), 0);
+        }
+        
+        let payrollTotal = 0;
+        let payrollCount = 0;
+        if (state.payroll.processedData) {
+            // Use unique record count instead of raw row count
+            payrollCount = state.payroll.processedData.uniqueRecordCount || 0;
+            // Use the pre-calculated total
+            payrollTotal = state.payroll.processedData.totalPayment || 0;
+        }
+        
+        const now = new Date();
+        const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+        
+        if (includeQB && qbCount > 0) {
+            summaryData.push(['QuickBooks Data', qbCount, qbTotal, dateStr]);
+        }
+        if (includePayroll && payrollCount > 0) {
+            summaryData.push(['Payroll Data', payrollCount, payrollTotal, dateStr]);
+        }
+        
+        // Calculate difference (QuickBooks - Payroll)
+        const difference = qbTotal - payrollTotal;
+        const recordDifference = qbCount - payrollCount;
+        
+        summaryData.push([]);
+        summaryData.push(['Difference (QB - Payroll)', recordDifference, difference, '']);
+        
+        // Add variance percentage if both totals exist
+        if (qbTotal > 0 && payrollTotal > 0) {
+            const variancePercent = ((difference / payrollTotal) * 100).toFixed(2);
+            summaryData.push(['Variance %', '', `${variancePercent}%`, '']);
+        }
+        
+        const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+        
+        // Style the summary sheet
+        summaryWs['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
+        
+        // Title
+        summaryWs['A1'].s = {
+            font: { bold: true, size: 16 },
+            alignment: { horizontal: 'center' }
+        };
+        
+        // Headers
+        for (let c = 0; c < 4; c++) {
+            const ref = XLSX.utils.encode_cell({ r: 2, c });
+            const cell = summaryWs[ref] || (summaryWs[ref] = {});
+            cell.s = ExcelStyles.headerStyle;
+        }
+        
+        // Format data rows
+        for (let r = 3; r < summaryData.length; r++) {
+            const rowLabel = summaryData[r][0];
+            
+            // Records column (column 1) - ensure it's numeric but not currency
+            const recordsRef = XLSX.utils.encode_cell({ r, c: 1 });
+            const recordsCell = summaryWs[recordsRef];
+            if (recordsCell && typeof recordsCell.v === 'number') {
+                recordsCell.t = 'n';
+                recordsCell.z = '0'; // Simple number format, no currency
+                delete recordsCell.s?.numFmt; // Remove any currency format
+            }
+            
+            // Total Amount column (column 2) - format as currency (except for Variance %)
+            const amountRef = XLSX.utils.encode_cell({ r, c: 2 });
+            const amountCell = summaryWs[amountRef];
+            if (amountCell) {
+                if (rowLabel === 'Variance %') {
+                    // Keep percentage format
+                    amountCell.s = amountCell.s || {};
+                    amountCell.s.alignment = { horizontal: 'right' };
+                } else if (typeof amountCell.v === 'number') {
+                    amountCell.s = amountCell.s || {};
+                    amountCell.s.numFmt = ExcelStyles.currencyFormat;
+                    amountCell.z = ExcelStyles.currencyFormat;
+                }
+            }
+        }
+        
+        // Style the Difference row
+        const diffRowIndex = summaryData.findIndex(row => row[0] === 'Difference (QB - Payroll)');
+        if (diffRowIndex >= 0) {
+            for (let c = 0; c < 4; c++) {
+                const ref = XLSX.utils.encode_cell({ r: diffRowIndex, c });
+                const cell = summaryWs[ref] || (summaryWs[ref] = {});
+                cell.s = {
+                    font: { bold: true, color: { rgb: difference === 0 ? 'FF000000' : (difference > 0 ? 'FF0000FF' : 'FFFF0000') } },
+                    fill: { patternType: 'solid', fgColor: { rgb: 'FFE7E6E6' } },
+                    border: {
+                        top: { style: 'double', color: { rgb: 'FF000000' } },
+                        bottom: { style: 'thin', color: { rgb: 'FF000000' } }
+                    }
+                };
+                
+                // Ensure Records column in Difference row is not currency formatted
+                if (c === 1 && cell.v && typeof cell.v === 'number') {
+                    cell.t = 'n';
+                    cell.z = '0';
+                    delete cell.s.numFmt;
+                }
+            }
+        }
+        
+        // Style the Variance % row if it exists
+        const varRowIndex = summaryData.findIndex(row => row[0] === 'Variance %');
+        if (varRowIndex >= 0) {
+            for (let c = 0; c < 4; c++) {
+                const ref = XLSX.utils.encode_cell({ r: varRowIndex, c });
+                const cell = summaryWs[ref] || (summaryWs[ref] = {});
+                cell.s = cell.s || {};
+                cell.s.font = { italic: true };
+                cell.s.fill = { patternType: 'solid', fgColor: { rgb: 'FFF2F2F2' } };
+            }
+        }
+        
+        summaryWs['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 25 }];
+        
+        XLSX.utils.book_append_sheet(wb, summaryWs, 'Combined Summary');
+    }
+    
+    const outputName = document.getElementById('combined-output-name').value || 
+                      `Combined_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    
+    XLSX.writeFile(wb, outputName);
+    setStatus('combined-status', 'Combined export completed successfully!', 'success');
+}
+
+// Reconciliation functions
+function extractBusinessTotals(processedData) {
+    const totals = new Map();
+    
+    // --- QuickBooks Data Processing ---
+    if (processedData.quickbooks && processedData.quickbooks.rawData) {
+        const qbData = processedData.quickbooks.rawData;
+        qbData.forEach(row => {
+            const business = row['Business Name'];
+            const amount = Number(row['Paid Amount']) || 0;
+            const date = row['Date'] || '';
+            
+            if (business && amount !== 0) { // Check for non-zero amounts
+                if (!totals.has(business)) {
+                    totals.set(business, { 
+                        qb: 0, 
+                        payroll: 0,
+                        qbPayments: [],
+                        payrollPayments: new Map()
+                    });
+                }
+                const current = totals.get(business);
+                current.qb += amount;
+                current.qbPayments.push({ date, amount });
+            }
+        });
+    }
+    
+    // --- Payroll Data Processing (CORRECTED) ---
+    if (processedData.payroll && processedData.payroll.aggregateAOA) {
+        const payrollData = processedData.payroll.aggregateAOA;
+        const header = payrollData[0];
+        const businessIdx = header.findIndex(h => String(h || '').toLowerCase() === 'business name');
+        const providerIdx = header.findIndex(h => String(h || '').toLowerCase() === 'provider name');
+        const paymentIdx = header.findIndex(h => String(h || '').toLowerCase() === 'provider payment');
+        const sourceIdx = header.findIndex(h => String(h || '').toLowerCase() === 'sourcefile');
+        
+        const nameIdx = businessIdx >= 0 ? businessIdx : providerIdx;
+        
+        if (nameIdx >= 0 && paymentIdx >= 0) {
+            for (let i = 1; i < payrollData.length; i++) {
+                const business = payrollData[i][nameIdx];
+                // Use the same robust parsing as the payroll summary
+                const rawPayment = payrollData[i][paymentIdx];
+                const amount = (typeof rawPayment === 'number') ? rawPayment : (parseFloat(String(rawPayment || '').replace(/[,]/g, '')) || 0);
+                const source = payrollData[i][sourceIdx] || 'Unknown';
+                
+                // We now check only for a business name, allowing positive and negative amounts.
+                if (business) {
+                    if (!totals.has(business)) {
+                        totals.set(business, { 
+                            qb: 0, 
+                            payroll: 0,
+                            qbPayments: [],
+                            payrollPayments: new Map()
+                        });
+                    }
+                    const current = totals.get(business);
+                    current.payroll += amount;
+                    
+                    const currentSourceTotal = current.payrollPayments.get(source) || 0;
+                    current.payrollPayments.set(source, currentSourceTotal + amount);
+                }
+            }
+        }
+    }
+    
+    return totals;
+}
+
+function analyzeDiscrepancies(totals, threshold = 1) {
+    const discrepancies = [];
+    
+    totals.forEach((amounts, business) => {
+        const diff = Math.abs(amounts.qb - amounts.payroll);
+        
+        if (amounts.qb === 0 && amounts.payroll > 0) {
+            // Business exists in Payroll but not in QB
+            discrepancies.push({
+                business,
+                qbTotal: 0,
+                payrollTotal: amounts.payroll,
+                difference: -amounts.payroll,
+                explanation: 'Provider not present in QB data',
+                qbPayments: amounts.qbPayments || [],
+                payrollPayments: amounts.payrollPayments || new Map()
+            });
+        } else if (amounts.payroll === 0 && amounts.qb > 0) {
+            // Business exists in QB but not in Payroll
+            discrepancies.push({
+                business,
+                qbTotal: amounts.qb,
+                payrollTotal: 0,
+                difference: amounts.qb,
+                explanation: 'Provider not present in Payroll data',
+                qbPayments: amounts.qbPayments || [],
+                payrollPayments: amounts.payrollPayments || new Map()
+            });
+        } else if (diff > threshold) {
+            // Both exist but amounts differ
+            const difference = amounts.qb - amounts.payroll;
+            const formattedDiff = difference >= 0 ? 
+                `${difference.toFixed(2)}` : 
+                `-${Math.abs(difference).toFixed(2)}`;
+            discrepancies.push({
+                business,
+                qbTotal: amounts.qb,
+                payrollTotal: amounts.payroll,
+                difference: difference,
+                explanation: `Total payment amounts differ by ${formattedDiff}`,
+                qbPayments: amounts.qbPayments || [],
+                payrollPayments: amounts.payrollPayments || new Map()
+            });
+        }
+    });
+    
+    // Sort by absolute difference amount (largest first)
+    discrepancies.sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference));
+    
+    return discrepancies;
+}
+
+function displayReconciliationPreview(discrepancies) {
+    const preview = document.getElementById('recon-preview');
+    const summary = document.getElementById('recon-summary');
+    const tbody = document.getElementById('recon-tbody');
+    
+    // Update businesses with discrepancies
+    state.reconciliation.businessesWithDiscrepancies.clear();
+    discrepancies.forEach(disc => {
+        state.reconciliation.businessesWithDiscrepancies.add(disc.business);
+    });
+    
+    // Show summary
+    const notInQB = discrepancies.filter(d => d.explanation.includes('not present in QB')).length;
+    const notInPayroll = discrepancies.filter(d => d.explanation.includes('not present in Payroll')).length;
+    const diffAmounts = discrepancies.length - notInQB - notInPayroll;
+    
+    summary.textContent = `Found ${discrepancies.length} discrepancies: ${notInQB} missing from QB, ${notInPayroll} missing from Payroll, ${diffAmounts} with different amounts`;
+    
+    // Clear and populate table
+    tbody.innerHTML = '';
+    
+    discrepancies.forEach(disc => {
+        const row = document.createElement('tr');
+        const diffClass = disc.difference > 0 ? 'color: blue;' : 'color: red;';
+        
+        // Format QB payments for display
+        let qbPaymentsDisplay = '';
+        if (disc.qbPayments && Array.isArray(disc.qbPayments)) {
+            qbPaymentsDisplay = disc.qbPayments
+                .map(p => `${p.date}: ${formatCurrency(p.amount)}`)
+                .join('<br>');
+        }
+        
+        // Format Payroll payments for display
+        let payrollPaymentsDisplay = '';
+        if (disc.payrollPayments && disc.payrollPayments instanceof Map) {
+            payrollPaymentsDisplay = Array.from(disc.payrollPayments.entries())
+                .map(([source, amount]) => `${source}: ${formatCurrency(amount)}`)
+                .join('<br>');
+        }
+        
+        row.innerHTML = `
+            <td>${disc.business}</td>
+            <td style="text-align: right;">${formatCurrency(disc.qbTotal)}</td>
+            <td style="text-align: right;">${formatCurrency(disc.payrollTotal)}</td>
+            <td style="text-align: right; ${diffClass} font-weight: bold;">
+                ${disc.difference >= 0 ? '' : '-'}${formatCurrency(Math.abs(disc.difference))}
+            </td>
+            <td>${disc.explanation}</td>
+            <td style="font-size: 0.85rem; line-height: 1.4;">${qbPaymentsDisplay}</td>
+            <td style="font-size: 0.85rem; line-height: 1.4;">${payrollPaymentsDisplay}</td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+    
+    preview.style.display = 'block';
+    
+    // Store for export
+    state.reconciliation.discrepancies = discrepancies;
+    
+    // Refresh displays to show highlighting
+    if (state.quickbooks.processedData) {
+        displayQuickBooksData();
+    }
+    if (state.payroll.processedData) {
+        displayPayrollData();
+    }
+}
+
+async function exportReconciliationReport() {
+    if (!state.reconciliation || !state.reconciliation.discrepancies) {
+        setStatus('recon-status', 'No reconciliation data to export', 'error');
+        return;
+    }
+    
+    const discrepancies = state.reconciliation.discrepancies;
+    const wb = XLSX.utils.book_new();
+    
+    // Create data array
+    const data = [
+        ['Reconciliation Report'],
+        [],
+        ['Generated:', new Date().toLocaleString()],
+        [],
+        ['Business Name', 'QB Total', 'Payroll Total', 'Difference', 'Explanation', 'QB Payments', 'Payroll Payments']
+    ];
+    
+    discrepancies.forEach(disc => {
+        // Format QB payments for export
+        let qbPaymentsText = '';
+        if (disc.qbPayments && Array.isArray(disc.qbPayments)) {
+            qbPaymentsText = disc.qbPayments
+                .map(p => `${p.date}: ${formatCurrency(p.amount)}`)
+                .join('\n');
+        }
+        
+        // Format Payroll payments for export
+        let payrollPaymentsText = '';
+        if (disc.payrollPayments && disc.payrollPayments instanceof Map) {
+            payrollPaymentsText = Array.from(disc.payrollPayments.entries())
+                .map(([source, amount]) => `${source}: ${formatCurrency(amount)}`)
+                .join('\n');
+        }
+        
+        data.push([
+            disc.business,
+            disc.qbTotal,
+            disc.payrollTotal,
+            disc.difference,
+            disc.explanation,
+            qbPaymentsText,
+            payrollPaymentsText
+        ]);
+    });
+    
+    // Add summary
+    data.push([]);
+    data.push(['Summary']);
+    data.push(['Total Discrepancies:', discrepancies.length]);
+    data.push(['Missing from QB:', discrepancies.filter(d => d.explanation.includes('not present in QB')).length]);
+    data.push(['Missing from Payroll:', discrepancies.filter(d => d.explanation.includes('not present in Payroll')).length]);
+    data.push(['Different Amounts:', discrepancies.filter(d => d.explanation.includes('differ by')).length]);
+    
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    
+    // Apply styling
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } } // Title spans all columns
+    ];
+    
+    // Title
+    ws['A1'].s = {
+        font: { bold: true, size: 16 },
+        alignment: { horizontal: 'center' }
+    };
+    
+    // Headers
+    for (let c = 0; c < 7; c++) {
+        const ref = XLSX.utils.encode_cell({ r: 4, c });
+        const cell = ws[ref] || (ws[ref] = {});
+        cell.s = ExcelStyles.headerStyle;
+    }
+    
+    // Format currency columns and apply text wrapping for payment details
+    for (let r = 5; r < data.length; r++) {
+        if (data[r].length >= 7) {
+            // QB Total column
+            let ref = XLSX.utils.encode_cell({ r, c: 1 });
+            let cell = ws[ref];
+            if (cell && typeof cell.v === 'number') {
+                cell.s = cell.s || {};
+                cell.s.numFmt = ExcelStyles.currencyFormat;
+                cell.z = ExcelStyles.currencyFormat;
+            }
+            
+            // Payroll Total column
+            ref = XLSX.utils.encode_cell({ r, c: 2 });
+            cell = ws[ref];
+            if (cell && typeof cell.v === 'number') {
+                cell.s = cell.s || {};
+                cell.s.numFmt = ExcelStyles.currencyFormat;
+                cell.z = ExcelStyles.currencyFormat;
+            }
+            
+            // Difference column
+            ref = XLSX.utils.encode_cell({ r, c: 3 });
+            cell = ws[ref];
+            if (cell && typeof cell.v === 'number') {
+                cell.s = cell.s || {};
+                cell.s.numFmt = ExcelStyles.currencyFormat;
+                cell.z = ExcelStyles.currencyFormat;
+                cell.s.font = { 
+                    bold: true, 
+                    color: { rgb: cell.v >= 0 ? 'FF0000FF' : 'FFFF0000' } 
+                };
+            }
+            
+            // Payment details columns - enable text wrapping
+            for (let c = 5; c <= 6; c++) {
+                ref = XLSX.utils.encode_cell({ r, c });
+                cell = ws[ref];
+                if (cell) {
+                    cell.s = cell.s || {};
+                    cell.s.alignment = { wrapText: true, vertical: 'top' };
+                }
+            }
+        }
+    }
+    
+    // Apply alternating rows
+    ExcelStyles.applyAlternatingRows(ws, 5, data.length - 7);
+    
+    // Column widths
+    ws['!cols'] = [
+        { wch: 30 }, // Business Name
+        { wch: 15 }, // QB Total
+        { wch: 15 }, // Payroll Total
+        { wch: 15 }, // Difference
+        { wch: 40 }, // Explanation
+        { wch: 30 }, // QB Payments
+        { wch: 30 }  // Payroll Payments
+    ];
+    
+    // Set row heights for better readability
+    ws['!rows'] = [];
+    for (let r = 5; r < data.length - 6; r++) {
+        ws['!rows'][r] = { hpt: 60 }; // Increased height for payment details
+    }
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Reconciliation');
+    
+    const filename = `Reconciliation_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    
+    setStatus('recon-status', 'Reconciliation report exported successfully!', 'success');
+}
+
+// Update checkDataAvailability function
+function checkDataAvailability() {
+    const hasQB = state.quickbooks.processedData && state.quickbooks.processedData.rawData;
+    const hasPayroll = state.payroll.processedData && state.payroll.processedData.aggregateAOA;
+    
+    document.getElementById('recon-has-qb').checked = !!hasQB;
+    document.getElementById('recon-has-payroll').checked = !!hasPayroll;
+    document.getElementById('recon-analyze-btn').disabled = !(hasQB && hasPayroll);
+    
+    if (hasQB && hasPayroll) {
+        setStatus('recon-status', 'Both data sources available. Ready to analyze.', 'info');
+    }
+}
+
+// Initialize event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Shared contractor mapping listener
+    document.getElementById('shared-contractor-csv').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+            state.sharedContractorMapping = {
+                map: new Map(),
+                qbMap: {},
+                fuzzyMatcher: null,
+                count: 0,
+                fileName: null
+            };
+            updateMappingStatus();
+            return;
+        }
+        
+        try {
+            setStatus('shared-contractor-status', 'Loading contractor mapping...', 'info');
+            await loadSharedContractorMapping(file);
+            log(`Shared contractor mapping loaded: ${state.sharedContractorMapping.count} mappings from ${file.name}`);
+        } catch (err) {
+            state.sharedContractorMapping = {
+                map: new Map(),
+                qbMap: {},
+                fuzzyMatcher: null,
+                count: 0,
+                fileName: null
+            };
+            setStatus('shared-contractor-status', `Error loading CSV: ${err.message}`, 'error');
+            updateMappingStatus();
+            log(`Contractor mapping error: ${err.message}`);
+        }
+    });
+    
+    // Initialize QuickBooks columns
+    const qbColumnsEl = document.getElementById('qb-columns');
+    ALL_QB_HEADERS.forEach(h => {
+        const item = document.createElement('div');
+        item.className = 'checkbox-item';
+        item.innerHTML = `
+            <input type="checkbox" id="qb-col-${h.replace(/\s+/g, '')}" data-column="${h}" checked>
+            <label for="qb-col-${h.replace(/\s+/g, '')}">${h}</label>
+        `;
+        qbColumnsEl.appendChild(item);
+    });
+    
+    // QuickBooks event listeners
+    document.getElementById('qb-input-file').addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            const fileName = e.target.files[0].name;
+            const baseName = fileName.substring(0, fileName.lastIndexOf('.'));
+            document.getElementById('qb-output-name').value = `${baseName}_formatted.xlsx`;
+            document.getElementById('qb-convert-btn').disabled = false;
+            state.quickbooks.inputFile = e.target.files[0];
+        }
+    });
+    
+    document.getElementById('qb-convert-btn').addEventListener('click', async () => {
+        const outputName = document.getElementById('qb-output-name').value.trim();
+        const sheetName = document.getElementById('qb-sheet-name').value.trim();
+        
+        if (!state.quickbooks.inputFile || !outputName || !sheetName) {
+            setStatus('qb-status', 'Please provide all required information', 'error');
+            return;
+        }
+        
+        if (state.sharedContractorMapping.count === 0) {
+            setStatus('qb-status', 'Please upload the contractor mapping CSV file first', 'error');
+            return;
+        }
+        
+        try {
+            setStatus('qb-status', 'Processing QuickBooks data...', 'info');
+            const btn = document.getElementById('qb-convert-btn');
+            btn.disabled = true;
+            
+            const data = await state.quickbooks.inputFile.arrayBuffer();
+            const workbook = XLSX.read(data);
+            
+            if (!workbook.SheetNames.includes(sheetName)) {
+                throw new Error(`Sheet '${sheetName}' not found in the input file.`);
+            }
+            
+            const ws = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+            
+            const processedData = await processQuickBooksData(jsonData);
+            generateQuickBooksExcel(processedData, outputName);
+            
+            setStatus('qb-status', 'QuickBooks conversion completed successfully!', 'success');
+            log(`QuickBooks conversion completed: ${processedData.length} records processed`);
+            
+            // Check if reconciliation is available
+            checkDataAvailability();
+            
+        } catch (err) {
+            setStatus('qb-status', `Error: ${err.message}`, 'error');
+            log(`QuickBooks error: ${err.message}`);
+        } finally {
+            document.getElementById('qb-convert-btn').disabled = false;
+        }
+    });
+
+    document.getElementById('qb-summary-search').addEventListener('input', (e) => {
+        displayQuickBooksData(e.target.value);
+    });
+    
+    // Payroll event listeners
+    document.getElementById('payroll-primary-file').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        setStatus('payroll-status', 'Reading primary file...', 'info');
+        state.payroll.primaryFile = file;
+        
+        try {
+            const buffer = await file.arrayBuffer();
+            const namedTables = await findNamedTables(buffer);
+            
+            const names = Object.keys(namedTables).sort();
+            if (names.length === 0) {
+                setStatus('payroll-status', 'No named Excel tables found in this file.', 'error');
+                return;
+            }
+            
+            const selectEl = document.getElementById('payroll-table-select');
+            selectEl.innerHTML = '<option value="">-- Select a Table --</option>' + 
+                names.map(n => `<option value="${n}">${n}</option>`).join('');
+            selectEl.disabled = false;
+            
+            setStatus('payroll-status', 'Primary file loaded. Please select a table.', 'info');
+            log(`Payroll: Found tables: ${names.join(', ')}`);
+            
+        } catch (err) {
+            setStatus('payroll-status', `Error loading primary file: ${err.message}`, 'error');
+            log(`Payroll error: ${err.message}`);
+        }
+    });
+    
+    document.getElementById('payroll-table-select').addEventListener('change', (e) => {
+        state.payroll.selectedTable = e.target.value;
+        if (state.payroll.selectedTable) {
+            state.payroll.fileStore = [{ 
+                name: state.payroll.primaryFile.name, 
+                file: state.payroll.primaryFile 
+            }];
+            updatePayrollFileList();
+            document.getElementById('payroll-add-files').disabled = false;
+            document.getElementById('payroll-export-btn').disabled = false;
+            setStatus('payroll-status', 'Table selected. You can now add more files or export.', 'info');
+        }
+    });
+    
+    document.getElementById('payroll-add-files').addEventListener('change', (e) => {
+        for (const file of e.target.files) {
+            if (!state.payroll.fileStore.some(f => f.name === file.name)) {
+                state.payroll.fileStore.push({ name: file.name, file });
+                log(`Payroll: Added file ${file.name}`);
+            }
+        }
+        updatePayrollFileList();
+    });
+    
+    document.getElementById('payroll-export-btn').addEventListener('click', async () => {
+        if (state.payroll.fileStore.length === 0 || !state.payroll.selectedTable) {
+            alert('Please select a table and at least one file.');
+            return;
+        }
+        
+        setStatus('payroll-status', 'Starting aggregation...', 'info');
+        const btn = document.getElementById('payroll-export-btn');
+        btn.disabled = true;
+        
+        try {
+            let masterColumns = null;
+            const allRows = [];
+            let failures = [];
+            const rowCounts = {};
+            
+            const ciFind = (arr, name) => arr.findIndex(h => String(h || '').toLowerCase() === name);
+            const ensureBusinessColumn = () => {
+                let idxProv = ciFind(masterColumns, 'provider name');
+                let idxBiz = ciFind(masterColumns, 'business name');
+                if (idxBiz === -1) {
+                    if (idxProv !== -1) {
+                        masterColumns.splice(idxProv + 1, 0, 'Business Name');
+                        idxBiz = idxProv + 1;
+                    } else {
+                        masterColumns.push('Business Name');
+                        idxBiz = masterColumns.length - 1;
+                    }
+                }
+                return { idxProv, idxBiz };
+            };
+            
+            for (const fileInfo of state.payroll.fileStore) {
+                try {
+                    const buffer = await fileInfo.file.arrayBuffer();
+                    const tableData = await extractTableData(buffer, state.payroll.selectedTable);
+                    
+                    if (!masterColumns) {
+                        masterColumns = (tableData.header && tableData.header.length) ? tableData.header.slice() : [];
+                    } else {
+                        (tableData.header || []).forEach(h => {
+                            if (h && !masterColumns.includes(h)) masterColumns.push(h);
+                        });
+                    }
+                    
+                    const { idxProv, idxBiz } = ensureBusinessColumn();
+                    
+                    const idxByName = {};
+                    (tableData.header || []).forEach((h, i) => {
+                        if (h != null && h !== '') idxByName[String(h)] = i;
+                    });
+                    
+                    let count = 0;
+                    for (const row of (tableData.rows || [])) {
+                        const out = new Array(masterColumns.length).fill(null);
+                        
+                        for (let i = 0; i < masterColumns.length; i++) {
+                            const colName = masterColumns[i];
+                            if (colName in idxByName) {
+                                const srcIdx = idxByName[colName];
+                                out[i] = row[srcIdx] ?? null;
+                            } else {
+                                if (i < row.length) out[i] = row[i];
+                            }
+                        }
+                        
+                        let providerValue = null;
+                        if (idxProv !== -1) providerValue = out[idxProv];
+                        if (providerValue == null && 'Provider Name' in idxByName) {
+                            providerValue = row[idxByName['Provider Name']];
+                        }
+                        const bn = state.sharedContractorMapping.map.size ? 
+                            (state.sharedContractorMapping.map.get(normName(providerValue)) || null) : null;
+                        out[idxBiz] = bn;
+                        
+                        out.push(fileInfo.name);
+                        
+                        allRows.push(out);
+                        count++;
+                    }
+                    rowCounts[fileInfo.name] = count;
+                    log(`Payroll: Processed ${fileInfo.name}: ${count} row(s).`);
+                } catch (err) {
+                    failures.push(`${fileInfo.name}: ${err.message || err}`);
+                    rowCounts[fileInfo.name] = 'Failed';
+                    log(`Payroll: Failed ${fileInfo.name}: ${err.message || err}`);
+                }
+            }
+            
+            if (!masterColumns) masterColumns = [];
+            if (masterColumns.findIndex(h => String(h || '').toLowerCase() === 'business name') === -1) {
+                const idxProv = masterColumns.findIndex(h => String(h || '').toLowerCase() === 'provider name');
+                if (idxProv !== -1) masterColumns.splice(idxProv + 1, 0, 'Business Name');
+                else masterColumns.push('Business Name');
+            }
+            
+            const header = [...masterColumns, 'SourceFile'];
+            const aoa = [header, ...allRows];
+            
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/[-T:]/g, '');
+            const outName = `${state.payroll.selectedTable}_Payroll_${timestamp}.xlsx`;
+            
+            await createPayrollWorkbook(aoa, outName, true);
+            
+            setStatus('payroll-status', 'Export complete!', 'success');
+            
+            checkDataAvailability();
+            
+            let summary = `Processed ${state.payroll.fileStore.length} file(s):\n\n`;
+            let totalRows = 0;
+            for (const name in rowCounts) {
+                summary += `- ${name}: ${rowCounts[name]} rows\n`;
+                if (typeof rowCounts[name] === 'number') totalRows += rowCounts[name];
+            }
+            const uniqueCount = state.payroll.processedData?.uniqueRecordCount || 0;
+            summary += `\nTotal Rows Processed: ${totalRows}`;
+            summary += `\nUnique Provider Payments: ${uniqueCount}`;
+            if (state.sharedContractorMapping.count) {
+                summary += `\nContractor mappings applied: ${state.sharedContractorMapping.count}`;
+            }
+            if (failures.length) {
+                summary += `\n\nFailures:\n- ${failures.join('\n- ')}`;
+            }
+            alert('Payroll Aggregation Summary\n\n' + summary);
+            
+        } catch (err) {
+            setStatus('payroll-status', `Export failed: ${err.message}`, 'error');
+            log(`Payroll export error: ${err.message}`);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    document.getElementById('payroll-summary-search').addEventListener('input', (e) => {
+        displayPayrollData(e.target.value);
+    });
+    
+    // Reconciliation event listeners
+    document.getElementById('recon-analyze-btn').addEventListener('click', () => {
+        setStatus('recon-status', 'Analyzing discrepancies...', 'info');
+        
+        try {
+            const threshold = parseFloat(document.getElementById('recon-threshold').value) || 1;
+            
+            const totals = extractBusinessTotals({
+                quickbooks: state.quickbooks.processedData,
+                payroll: state.payroll.processedData
+            });
+            
+            const discrepancies = analyzeDiscrepancies(totals, threshold);
+            
+            if (discrepancies.length === 0) {
+                setStatus('recon-status', 'No discrepancies found! All business totals match.', 'success');
+                document.getElementById('recon-preview').style.display = 'none';
+            } else {
+                displayReconciliationPreview(discrepancies);
+                setStatus('recon-status', `Found ${discrepancies.length} discrepancies`, 'warning');
+                log(`Reconciliation: Found ${discrepancies.length} discrepancies`);
+            }
+        } catch (err) {
+            setStatus('recon-status', `Error analyzing data: ${err.message}`, 'error');
+            log(`Reconciliation error: ${err.message}`);
+        }
+    });
+    
+    document.getElementById('recon-export-btn').addEventListener('click', async () => {
+        try {
+            await exportReconciliationReport();
+        } catch (err) {
+            setStatus('recon-status', `Export failed: ${err.message}`, 'error');
+            log(`Reconciliation export error: ${err.message}`);
+        }
+    });
+    
+    // Combined export listener
+    document.getElementById('combined-export-btn').addEventListener('click', async () => {
+        try {
+            setStatus('combined-status', 'Creating combined export...', 'info');
+            await createCombinedExport();
+        } catch (err) {
+            setStatus('combined-status', `Export failed: ${err.message}`, 'error');
+            log(`Combined export error: ${err.message}`);
+        }
+    });
+    
+    // Set default output name for combined export
+    document.getElementById('combined-output-name').value = 
+        `Combined_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    
+    // Initialize reconciliation tab
+    checkDataAvailability();
+    
+    // Initialize mapping status
+    updateMappingStatus();
+});
+
+function updatePayrollFileList() {
+    const container = document.getElementById('payroll-file-list');
+    if (state.payroll.fileStore.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No files added yet</p>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    state.payroll.fileStore.forEach((file, index) => {
+        const item = document.createElement('div');
+        item.className = 'file-list-item';
+        item.innerHTML = `
+            <span>${file.name}</span>
+            ${index > 0 ? `<button class="remove-file" onclick="removePayrollFile(${index})">Remove</button>` : ''}
+        `;
+        container.appendChild(item);
+    });
+}
+
+function removePayrollFile(index) {
+    state.payroll.fileStore.splice(index, 1);
+    updatePayrollFileList();
+}
+</script>
+
+</body>
+</html>
